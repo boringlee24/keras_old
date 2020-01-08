@@ -9,6 +9,6 @@
 #SBATCH --error=/scratch/li.baol/slurm/%j.err                # sets the standard error to be stored in file my_nice_job.%j.err,
 #SBATCH --gres=gpu:k80:1                              # reserves 1 gpu per machine
 #SBATCH --exclude=c[2184,2192],d[1005,1013]   #[2204-2207]
-#SBATCH --nodelist=c2176, d1002
+#SBATCH --nodelist=c2176
 
 srun python ${MYJOB}.py --tc ${TESTCASE} --resume
