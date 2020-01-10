@@ -6,10 +6,13 @@ import re
 import random
 import json
 import numpy as np
+import glob
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 queue = [49, 15, 50, 39, 14, 40, 13, 37, 32, 44, 1, 25, 6, 12, 43, 35, 29, 7, 46, 23, 47, 34, 21, 33, 36, 24, 28, 48, 17, 8, 45, 30, 2, 41, 16, 3, 27, 20, 38, 11, 42, 10, 22, 4, 18, 19, 5, 9, 26, 31]
 job_start = {} #{'49': time1, '15': time2...}
-JCT = {} 
+JCT = {}
+PJCT = {} # practical complete time, not applicable for all jobs
 index = 0
 
 K80_cap = 8
@@ -20,20 +23,24 @@ qualified_jobs = 0
 
 K80_job = []
 V100_job = []
+all_job = []
 qualified_job = []
+pc_job = [] # list of jobs that are pratically completed
 
-testcase = 'random_no_pratical_finish'
+testcase = 'random_practical_finish'
 
-INTERVAL = 30 # make decision every 30s
+INTERVAL = 60 # make decision every 30s
 QUALIFY_TIME = 600 # 600s or 10min as threshold
 
 # takes in a list of jobs qualified for promote, returns a list of jobs that get upgraded, and an empty list for demoted
 # jobs
-def random_promotion(V100_free, promote_list):
-    if V100_free >= len(promote_list):
-        return promote_list, []
+def random_promotion(V100_free, promote_list, force_demote):
+    num_demote = len(force_demote)
+    V100_avail = num_demote + V100_free
+    if V100_avail >= len(promote_list):
+        return promote_list, force_demote
     else:
-        return random.sample(promote_list, V100_free), []
+        return random.sample(promote_list, V100_avail), force_demote
 
 # checks squeue every 10s to see if the job has ended
 def wait_till_job_ends(job):
@@ -46,6 +53,42 @@ def wait_till_job_ends(job):
             break
         time.sleep(CHECK_INTERVAL)
 
+# function that checks the tensorboard log of currently running jobs and logs practical complete jobs in a global list
+# once a job reaches practical complete, it cannot be promoted. If it's already promoted, it gets demoted.
+# criteria for practical complete: loss improvement has been smaller than 0.01 for last 3 consecutive epochs
+def check_practical_complete(job_list):
+    log_path = '/scratch/li.baol/tsrbrd_log/job_runs/' + testcase + '/'
+    threshold = 0.01
+    global pc_job
+    global PJCT
+    for job in job_list:
+        # only check for job outside of practical complete job list
+        if job not in pc_job:
+            log_dir = log_path + 'job' + job + '/*'
+            dirs = glob.glob(log_dir)
+            dirs.sort()
+            loss_combine = []
+            for tc in dirs:
+                
+                iterator = EventAccumulator(tc).Reload()
+                if len(iterator.Tags()['scalars']) > 0:
+                    tag = 'loss' #iterator.Tags()['scalars'][2] # this is tag for loss
+                    loss = [item.value for item in iterator.Scalars(tag)]
+                    loss_combine += loss
+
+            # now that we have the loss at each epoch, we can check if it has reached practical complete
+            if len(loss_combine) >= 4:
+                latest_loss = loss_combine[-4:]
+                finished = True
+                for i in range(3):
+                    # if the difference is >= 0.01, the job has not reached practical complete yet
+                    if latest_loss[i] - latest_loss[i+1] >= threshold:
+                        finished = False
+                        break
+                if finished:
+                    pc_job.append(job)                                            
+                    PJCT[job] = int(time.time() - job_start[job])
+           
 
 while True:
     
@@ -78,7 +121,12 @@ while True:
             V100_job.remove(job)
             JCT[job] = int(time.time() - job_start[job])
 
-    ################ check run time of current running new K80 jobs #################
+    ################ check for practical finished jobs on K80 and V100 ######################
+
+    all_job = K80_job + V100_job
+    check_practical_complete(all_job)
+
+    ################ check run time of current K80 job, update qualified_job #################
 
     for job in K80_job:
         if job not in qualified_job:
@@ -89,11 +137,17 @@ while True:
     ################ make promotion decisions ########################
 
     V100_free = V100_cap - V100_used
-    # this returns available jobs for promotion
-    promote_list = list(set(qualified_job).intersection(K80_job))
+    # this returns available jobs for promotion. Has to be qualified, and currently in K80, but not practically complete
+    promote_list = list(set(qualified_job).intersection(K80_job).difference(pc_job))
+    # this returns job forced to be demoted. Currently in V100, and is practically complete
+    force_demote = list(set(V100_job).intersection(pc_job))
 
     if len(promote_list) > 0:
-        promoted, demoted = random_promotion(V100_free, promote_list)
+        promoted, demoted = random_promotion(V100_free, promote_list, force_demote)
+        if len(promoted) > 0:
+            print('promoted jobs: ', promoted)
+        if len(demoted) > 0:
+            print('demoted jobs: ', demoted)
         # stop all promoted jobs on K80
         for job in promoted:
             cmd = 'scancel --signal=TERM --name=job' + job + '_K' # scancel --signal=TERM --name=job1_4gpu
@@ -153,7 +207,13 @@ while True:
 average_JCT = np.average(list(JCT.values()))
 JCT['average'] = average_JCT
 
+average_PJCT = np.average(list(PJCT.values()))
+PJCT['average'] = average_PJCT
+
 print('finished all runs')
-filename = testcase + '.json'
-with open(filename, 'w') as fp:
-    json.dump(JCT, fp, sort_keys=True, indent=4)
+JCT_name = testcase + '_JCT.json'
+PJCT_name = testcase + '_PJCT.json'
+with open(JCT_name, 'w') as fp1:
+    json.dump(JCT, fp1, sort_keys=True, indent=4)
+with open(PJCT_name, 'w') as fp2:
+    json.dump(PJCT, fp2, sort_keys=True, indent=4)
