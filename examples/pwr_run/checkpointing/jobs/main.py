@@ -27,6 +27,7 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
+nodelist='c2179,d1009'
 testcase = 'random_practical_finish'
 
 INTERVAL = 60 # make decision every 30s
@@ -46,12 +47,54 @@ def random_promotion(V100_free, promote_list, force_demote):
 def wait_till_job_ends(job):
     CHECK_INTERVAL = 10 # 10s
     while True:
-        stdout = subprocess.check_output(['squeue -u $USER | awk \"/job/\" | awk \'{print $3}\''], shell=True)
+        stdout = subprocess.check_output(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/job/\" | awk \'{print $3}\''], shell=True)
         stdout = str(stdout)
         job_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string, e.g. ['20', '48'...]
         if job not in job_run:
             break
         time.sleep(CHECK_INTERVAL)
+
+# cancel job, and make sure there is no error with scancel command
+def scancel_job(job, gpu): # scancel_job('50', 'K')
+    RETRY_INTERVAL = 10
+    cmd = 'scancel --signal=TERM --name=job' + job + '_' + gpu
+    while True:
+        stdout = subprocess.check_output([cmd], shell=True)
+        stdout = str(stdout)       
+        if 'error' not in stdout:
+            break
+        else:
+            print(stdout)
+            print('encountered scancel error, retrying...')
+        time.sleep(RETRY_INTERVAL)
+
+# resume job, and make sure there is no error with sbatch submission
+def resume_job(job, gpu): # resume_job('1', 'V')
+    RETRY_INTERVAL = 10
+    cmd = './run_resume.sh job' + job + ' ' + gpu + ' ' + testcase
+    while True:
+        stdout = subprocess.check_output([cmd], shell=True)
+        stdout = str(stdout)      
+        print(stdout)
+        if 'Submitted batch job' in stdout:
+            break
+        else:
+            print('encountered sbatch error on job resume, retrying...')
+        time.sleep(RETRY_INTERVAL)
+
+# start job, and make sure there is no error with sbatch submission
+def start_job(job): # start_job('1')
+    RETRY_INTERVAL = 10
+    cmd = './run_start.sh job' + job + ' K ' + testcase
+    while True:
+        stdout = subprocess.check_output([cmd], shell=True)
+        stdout = str(stdout)       
+        print(stdout)
+        if 'Submitted batch job' in stdout:        
+            break
+        else:
+            print('encountered sbatch error on job start, retrying...')
+        time.sleep(RETRY_INTERVAL)
 
 # function that checks the tensorboard log of currently running jobs and logs practical complete jobs in a global list
 # once a job reaches practical complete, it cannot be promoted. If it's already promoted, it gets demoted.
@@ -98,7 +141,7 @@ while True:
     ################### check for finished jobs on K80 and V100 ##############################
 
     # check list of currently running K80 jobs
-    stdout = subprocess.check_output(['squeue -u $USER | awk \"/_K/\" | awk \'{print $3}\''], shell=True)
+    stdout = subprocess.check_output(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/_K/\" | awk \'{print $3}\''], shell=True)
     stdout = str(stdout)
     K80_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
     # now confirm if there are jobs that are finished
@@ -110,7 +153,7 @@ while True:
             JCT[job] = int(time.time() - job_start[job])
     
     # check list of currently running V100 jobs
-    stdout = subprocess.check_output(['squeue -u $USER | awk \"/_V/\" | awk \'{print $3}\''], shell=True)
+    stdout = subprocess.check_output(['squeue -u $USER --nodelist=' + nodelist + '| awk \"/_V/\" | awk \'{print $3}\''], shell=True)
     stdout = str(stdout)
     V100_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
     # now confirm if there are jobs that are finished
@@ -150,29 +193,25 @@ while True:
             print('demoted jobs: ', demoted)
         # stop all promoted jobs on K80
         for job in promoted:
-            cmd = 'scancel --signal=TERM --name=job' + job + '_K' # scancel --signal=TERM --name=job1_4gpu
-            subprocess.call([cmd], shell=True)
+            scancel_job(job, 'K')
             K80_job.remove(job)
             K80_used -= 1
         # stop all demoted jobs on V100
         for job in demoted:
-            cmd = 'scancel --signal=TERM --name=job' + job + '_V'
-            subprocess.call([cmd], shell=True)
+            scancel_job(job, 'V')
             V100_job.remove(job)
             V100_used -= 1
 
         # resume promoted jobs on V100
         for job in promoted:
-            cmd = './run_resume.sh job' + job + ' V ' + testcase
             wait_till_job_ends(job)
-            subprocess.call([cmd], shell=True)
+            resume_job(job, 'V')
             V100_job.append(job)
             V100_used += 1
         # resume demoted jobs on K80
         for job in demoted:
-            cmd = './run_resume.sh job' + job + ' K ' + testcase
             wait_till_job_ends(job)
-            subprocess.call([cmd], shell=True)
+            resume_job(job, 'K')
             K80_job.append(job)
             K80_used += 1
 
@@ -186,9 +225,7 @@ while True:
         for i in range(K80_free):
             if index < len(queue):
                 job = str(queue[index])
-                cmd = './run_start.sh job' + job + ' K ' + testcase
-#                os.system(cmd)
-                subprocess.call([cmd], shell=True)
+                start_job(job)
                 K80_job.append(job)
                 job_start[job] = time.time()
                 index += 1

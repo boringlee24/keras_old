@@ -8,7 +8,7 @@
 #SBATCH --output=/scratch/li.baol/slurm/%j.out               # sets the standard output to be stored in file my_nice_job.%j.out,
 #SBATCH --error=/scratch/li.baol/slurm/%j.err                # sets the standard error to be stored in file my_nice_job.%j.err,
 #SBATCH --gres=gpu:v100-sxm2:1                              # reserves 1 gpu per machine
-#SBATCH --exclude=c[2184,2192],d[1005,1013]   #[2204-2207]
-#SBATCH --nodelist=d1001
+#SBATCH --exclude=c[2184,2192],d[1001,1005,1013]   #[2204-2207]
+#SBATCH --nodelist=d1009
 
 srun python ${MYJOB}.py --tc ${TESTCASE}
