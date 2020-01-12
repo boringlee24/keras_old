@@ -47,7 +47,8 @@ def random_promotion(V100_free, promote_list, force_demote):
 def wait_till_job_ends(job):
     CHECK_INTERVAL = 10 # 10s
     while True:
-        stdout = subprocess.check_output(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/job/\" | awk \'{print $3}\''], shell=True)
+        stdout = subprocess.run(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/job/\" | awk \'{print $3}\''],
+        shell=True, stdout=subprocess.PIPE).stdout
         stdout = str(stdout)
         job_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string, e.g. ['20', '48'...]
         if job not in job_run:
@@ -57,9 +58,9 @@ def wait_till_job_ends(job):
 # cancel job, and make sure there is no error with scancel command
 def scancel_job(job, gpu): # scancel_job('50', 'K')
     RETRY_INTERVAL = 10
-    cmd = 'scancel --signal=TERM --name=job' + job + '_' + gpu
+    cmd = 'scancel --signal=TERM --name=job' + job + '_' + gpu + ' --nodelist=' + nodelist
     while True:
-        stdout = subprocess.check_output([cmd], shell=True)
+        stdout = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE).stdout
         stdout = str(stdout)       
         if 'error' not in stdout:
             break
@@ -73,7 +74,7 @@ def resume_job(job, gpu): # resume_job('1', 'V')
     RETRY_INTERVAL = 10
     cmd = './run_resume.sh job' + job + ' ' + gpu + ' ' + testcase
     while True:
-        stdout = subprocess.check_output([cmd], shell=True)
+        stdout = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE).stdout
         stdout = str(stdout)      
         print(stdout)
         if 'Submitted batch job' in stdout:
@@ -87,8 +88,8 @@ def start_job(job): # start_job('1')
     RETRY_INTERVAL = 10
     cmd = './run_start.sh job' + job + ' K ' + testcase
     while True:
-        stdout = subprocess.check_output([cmd], shell=True)
-        stdout = str(stdout)       
+        stdout = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE).stdout
+        stdout = str(stdout)      
         print(stdout)
         if 'Submitted batch job' in stdout:        
             break
@@ -141,28 +142,48 @@ while True:
     ################### check for finished jobs on K80 and V100 ##############################
 
     # check list of currently running K80 jobs
-    stdout = subprocess.check_output(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/_K/\" | awk \'{print $3}\''], shell=True)
+    stdout = subprocess.run(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/_K/\" | awk \'{print $3}\''],
+    shell=True, stdout=subprocess.PIPE).stdout
     stdout = str(stdout)
     K80_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
-    # now confirm if there are jobs that are finished
-    # this syncs K80_job and K80_run
-    for job in K80_job[:]:
-        if job not in K80_run:
-            K80_used -= 1            
-            K80_job.remove(job) 
-            JCT[job] = int(time.time() - job_start[job])
+
+    if set(K80_run) != set(K80_job):
+        # first get pending jobs, in case the job is still pending rather than finished
+        stdout = subprocess.run(['squeue -u $USER --state=PENDING | awk \"/_K/\" | awk \'{print $3}\''], shell=True,
+        stdout=subprocess.PIPE).stdout
+        stdout = str(stdout)
+        K80_pd = re.findall(r'\d+', stdout) # this is list of currently pending jobs in string       
+
+        # now confirm if there are jobs that are finished
+        # this syncs K80_job and K80_run
+        for job in K80_job[:]:
+            if job not in K80_run and job not in K80_pd: # if the job is neither running nor pending
+                K80_used -= 1            
+                K80_job.remove(job)
+                print('K80 finished job: ' + job)
+                JCT[job] = int(time.time() - job_start[job])
     
     # check list of currently running V100 jobs
-    stdout = subprocess.check_output(['squeue -u $USER --nodelist=' + nodelist + '| awk \"/_V/\" | awk \'{print $3}\''], shell=True)
+    stdout = subprocess.run(['squeue -u $USER --nodelist=' + nodelist + '| awk \"/_V/\" | awk \'{print $3}\''],
+    shell=True, stdout=subprocess.PIPE).stdout
     stdout = str(stdout)
     V100_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
     # now confirm if there are jobs that are finished
     # this syncs V100_job and V100_run
-    for job in V100_job[:]:
-        if job not in V100_run:
-            V100_used -= 1            
-            V100_job.remove(job)
-            JCT[job] = int(time.time() - job_start[job])
+
+    if set(V100_run) != set(V100_job):
+        # first get pending jobs, in case the job is still pending rather than finished
+        stdout = subprocess.run(['squeue -u $USER --state=PENDING | awk \"/_V/\" | awk \'{print $3}\''], shell=True,
+        stdout=subprocess.PIPE).stdout
+        stdout = str(stdout)
+        V100_pd = re.findall(r'\d+', stdout) # this is list of currently pending jobs in string       
+
+        for job in V100_job[:]:
+            if job not in V100_run and job not in V100_pd:
+                V100_used -= 1            
+                V100_job.remove(job)
+                print('V100 finished job: ' + job)
+                JCT[job] = int(time.time() - job_start[job])
 
     ################ check for practical finished jobs on K80 and V100 ######################
 
@@ -194,11 +215,13 @@ while True:
         # stop all promoted jobs on K80
         for job in promoted:
             scancel_job(job, 'K')
+            print('K80 job canceled: ' + job)
             K80_job.remove(job)
             K80_used -= 1
         # stop all demoted jobs on V100
         for job in demoted:
             scancel_job(job, 'V')
+            print('V100 job canceled: ' + job)
             V100_job.remove(job)
             V100_used -= 1
 
@@ -206,12 +229,14 @@ while True:
         for job in promoted:
             wait_till_job_ends(job)
             resume_job(job, 'V')
+            print('V100 job resumed: ' + job)
             V100_job.append(job)
             V100_used += 1
         # resume demoted jobs on K80
         for job in demoted:
             wait_till_job_ends(job)
             resume_job(job, 'K')
+            print('K80 job resumed: ' + job)
             K80_job.append(job)
             K80_used += 1
 
@@ -226,6 +251,7 @@ while True:
             if index < len(queue):
                 job = str(queue[index])
                 start_job(job)
+                print('new job created on K80: ' + job)
                 K80_job.append(job)
                 job_start[job] = time.time()
                 index += 1
