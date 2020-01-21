@@ -27,6 +27,7 @@ import argparse
 import time
 import signal
 import glob
+import json
 
 parser = argparse.ArgumentParser(description='Tensorflow Cifar10 Training')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='specific testcase name')
@@ -166,3 +167,10 @@ model.fit(x_train, y_train,
 scores = model.evaluate(x_test, y_test, verbose=1)
 print('Test loss:', scores[0])
 print('Test accuracy:', scores[1])
+
+finish_dict = {}
+with open('finish.json', 'r') as fp:
+    finish_dict = json.load(fp)
+finish_dict[job_name] = 1
+with open('finish.json', 'w') as fp:
+    json.dump(finish_dict, fp)

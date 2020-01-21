@@ -1,0 +1,332 @@
+b'Submitted batch job 8819255\n'
+new job created on K80: 49
+b'Submitted batch job 8819256\n'
+new job created on K80: 15
+b'Submitted batch job 8819257\n'
+new job created on K80: 50
+b'Submitted batch job 8819258\n'
+new job created on K80: 39
+b'Submitted batch job 8819259\n'
+new job created on K80: 14
+b'Submitted batch job 8819260\n'
+new job created on K80: 40
+b'Submitted batch job 8819262\n'
+new job created on K80: 13
+b'Submitted batch job 8819263\n'
+new job created on K80: 37
+K80 finished job: 15
+b'Submitted batch job 8819391\n'
+new job created on K80: 32
+K80 finished job: 14
+promoted jobs:  ['40', '37', '50', '39']
+K80 job canceled: 40
+K80 job canceled: 37
+K80 job canceled: 50
+K80 job canceled: 39
+b'Submitted batch job 8819411\n'
+V100 job resumed: 40
+b'Submitted batch job 8819414\n'
+V100 job resumed: 37
+b'Submitted batch job 8819415\n'
+V100 job resumed: 50
+b'Submitted batch job 8819416\n'
+V100 job resumed: 39
+b'Submitted batch job 8819417\n'
+new job created on K80: 44
+b'Submitted batch job 8819420\n'
+new job created on K80: 1
+b'Submitted batch job 8819421\n'
+new job created on K80: 25
+b'Submitted batch job 8819422\n'
+new job created on K80: 6
+b'Submitted batch job 8819423\n'
+new job created on K80: 12
+K80 finished job: 13
+V100 finished job: 37
+promoted jobs:  ['49']
+K80 job canceled: 49
+b'Submitted batch job 8819448\n'
+V100 job resumed: 49
+b'Submitted batch job 8819449\n'
+new job created on K80: 43
+b'Submitted batch job 8819450\n'
+new job created on K80: 35
+K80 finished job: 1
+b'Submitted batch job 8819458\n'
+new job created on K80: 29
+K80 finished job: 6
+promoted jobs:  ['32']
+demoted jobs:  ['40']
+K80 job canceled: 32
+V100 job canceled: 40
+b'Submitted batch job 8819461\n'
+V100 job resumed: 32
+b'Submitted batch job 8819462\n'
+K80 job resumed: 40
+b'Submitted batch job 8819463\n'
+new job created on K80: 7
+K80 finished job: 7
+b'Submitted batch job 8819608\n'
+new job created on K80: 46
+K80 finished job: 12
+b'Submitted batch job 8819738\n'
+new job created on K80: 23
+promoted jobs:  ['25']
+demoted jobs:  ['39']
+K80 job canceled: 25
+V100 job canceled: 39
+b'Submitted batch job 8819777\n'
+V100 job resumed: 25
+b'Submitted batch job 8819778\n'
+K80 job resumed: 39
+K80 finished job: 44
+K80 finished job: 43
+K80 finished job: 35
+K80 finished job: 29
+K80 finished job: 40
+K80 finished job: 46
+K80 finished job: 23
+K80 finished job: 39
+V100 finished job: 25
+b'Submitted batch job 8820612\n'
+new job created on K80: 47
+b'Submitted batch job 8820614\n'
+new job created on K80: 34
+b'Submitted batch job 8820616\n'
+new job created on K80: 21
+b'Submitted batch job 8820617\n'
+new job created on K80: 33
+b'Submitted batch job 8820618\n'
+new job created on K80: 36
+b'Submitted batch job 8820619\n'
+new job created on K80: 24
+b'Submitted batch job 8820620\n'
+new job created on K80: 28
+b'Submitted batch job 8820621\n'
+new job created on K80: 48
+V100 finished job: 50
+V100 finished job: 49
+V100 finished job: 32
+promoted jobs:  ['28', '34', '48', '47']
+K80 job canceled: 28
+K80 job canceled: 34
+K80 job canceled: 48
+K80 job canceled: 47
+b'Submitted batch job 8820645\n'
+V100 job resumed: 28
+b'Submitted batch job 8820646\n'
+V100 job resumed: 34
+b'Submitted batch job 8820647\n'
+V100 job resumed: 48
+b'Submitted batch job 8820648\n'
+V100 job resumed: 47
+b'Submitted batch job 8820649\n'
+new job created on K80: 17
+b'Submitted batch job 8820650\n'
+new job created on K80: 8
+b'Submitted batch job 8820651\n'
+new job created on K80: 45
+b'Submitted batch job 8820652\n'
+new job created on K80: 30
+V100 finished job: 34
+promoted jobs:  ['45']
+K80 job canceled: 45
+b'Submitted batch job 8820870\n'
+V100 job resumed: 45
+b'Submitted batch job 8820871\n'
+new job created on K80: 2
+V100 finished job: 45
+promoted jobs:  ['33']
+K80 job canceled: 33
+b'Submitted batch job 8820873\n'
+V100 job resumed: 33
+b'Submitted batch job 8820874\n'
+new job created on K80: 41
+promoted jobs:  ['17']
+demoted jobs:  ['28']
+K80 job canceled: 17
+V100 job canceled: 28
+b'Submitted batch job 8821062\n'
+V100 job resumed: 17
+b'Submitted batch job 8821063\n'
+K80 job resumed: 28
+V100 finished job: 17
+promoted jobs:  ['24']
+K80 job canceled: 24
+b'Submitted batch job 8821065\n'
+V100 job resumed: 24
+b'Submitted batch job 8821066\n'
+new job created on K80: 16
+promoted jobs:  ['41']
+demoted jobs:  ['33']
+K80 job canceled: 41
+V100 job canceled: 33
+b'Submitted batch job 8821093\n'
+V100 job resumed: 41
+b'Submitted batch job 8821094\n'
+K80 job resumed: 33
+V100 finished job: 41
+promoted jobs:  ['21']
+K80 job canceled: 21
+b'Submitted batch job 8821204\n'
+V100 job resumed: 21
+b'Submitted batch job 8821205\n'
+new job created on K80: 3
+V100 finished job: 24
+V100 finished job: 21
+promoted jobs:  ['30', '2']
+K80 job canceled: 30
+K80 job canceled: 2
+b'Submitted batch job 8821207\n'
+V100 job resumed: 30
+b'Submitted batch job 8821208\n'
+V100 job resumed: 2
+b'Submitted batch job 8821209\n'
+new job created on K80: 27
+b'Submitted batch job 8821210\n'
+new job created on K80: 20
+V100 finished job: 2
+promoted jobs:  ['36']
+K80 job canceled: 36
+b'Submitted batch job 8821211\n'
+V100 job resumed: 36
+b'Submitted batch job 8821212\n'
+new job created on K80: 38
+promoted jobs:  ['8']
+demoted jobs:  ['30']
+K80 job canceled: 8
+V100 job canceled: 30
+b'Submitted batch job 8821217\n'
+V100 job resumed: 8
+b'Submitted batch job 8821218\n'
+K80 job resumed: 30
+V100 finished job: 8
+promoted jobs:  ['16']
+K80 job canceled: 16
+b'Submitted batch job 8821219\n'
+V100 job resumed: 16
+b'Submitted batch job 8821220\n'
+new job created on K80: 11
+V100 finished job: 16
+promoted jobs:  ['3']
+demoted jobs:  ['36']
+K80 job canceled: 3
+V100 job canceled: 36
+b'Submitted batch job 8821287\n'
+V100 job resumed: 3
+b'Submitted batch job 8821304\n'
+K80 job resumed: 36
+promoted jobs:  ['27']
+K80 job canceled: 27
+b'Submitted batch job 8821423\n'
+V100 job resumed: 27
+b'Submitted batch job 8821424\n'
+new job created on K80: 42
+V100 finished job: 27
+promoted jobs:  ['20']
+K80 job canceled: 20
+b'Submitted batch job 8821425\n'
+V100 job resumed: 20
+b'Submitted batch job 8821426\n'
+new job created on K80: 10
+V100 finished job: 3
+V100 finished job: 20
+promoted jobs:  ['38']
+K80 job canceled: 38
+b'Submitted batch job 8821427\n'
+V100 job resumed: 38
+b'Submitted batch job 8821428\n'
+new job created on K80: 22
+promoted jobs:  ['11']
+K80 job canceled: 11
+b'Submitted batch job 8821530\n'
+V100 job resumed: 11
+b'Submitted batch job 8821531\n'
+new job created on K80: 4
+V100 finished job: 11
+promoted jobs:  ['42']
+K80 job canceled: 42
+b'Submitted batch job 8821539\n'
+V100 job resumed: 42
+b'Submitted batch job 8821540\n'
+new job created on K80: 18
+promoted jobs:  ['10']
+demoted jobs:  ['38']
+K80 job canceled: 10
+V100 job canceled: 38
+b'Submitted batch job 8821542\n'
+V100 job resumed: 10
+b'Submitted batch job 8821543\n'
+K80 job resumed: 38
+promoted jobs:  ['22']
+demoted jobs:  ['10']
+K80 job canceled: 22
+V100 job canceled: 10
+b'Submitted batch job 8821545\n'
+V100 job resumed: 22
+b'Submitted batch job 8821546\n'
+K80 job resumed: 10
+V100 finished job: 42
+V100 finished job: 22
+promoted jobs:  ['4']
+K80 job canceled: 4
+b'Submitted batch job 8821557\n'
+V100 job resumed: 4
+b'Submitted batch job 8821558\n'
+new job created on K80: 19
+V100 finished job: 4
+promoted jobs:  ['18']
+K80 job canceled: 18
+b'Submitted batch job 8821775\n'
+V100 job resumed: 18
+b'Submitted batch job 8821776\n'
+new job created on K80: 5
+promoted jobs:  ['19']
+K80 job canceled: 19
+b'Submitted batch job 8822698\n'
+V100 job resumed: 19
+b'Submitted batch job 8822699\n'
+new job created on K80: 9
+V100 finished job: 18
+V100 finished job: 19
+promoted jobs:  ['5']
+K80 job canceled: 5
+b'Submitted batch job 8822718\n'
+V100 job resumed: 5
+b'Submitted batch job 8822719\n'
+new job created on K80: 26
+V100 finished job: 5
+promoted jobs:  ['9']
+K80 job canceled: 9
+b'Submitted batch job 8822731\n'
+V100 job resumed: 9
+b'Submitted batch job 8822732\n'
+new job created on K80: 31
+V100 finished job: 9
+promoted jobs:  ['26']
+demoted jobs:  ['48']
+K80 job canceled: 26
+V100 job canceled: 48
+b'Submitted batch job 8822825\n'
+V100 job resumed: 26
+b'Submitted batch job 8822829\n'
+K80 job resumed: 48
+promoted jobs:  ['31']
+demoted jobs:  ['26']
+K80 job canceled: 31
+V100 job canceled: 26
+b'Submitted batch job 8822852\n'
+V100 job resumed: 31
+b'Submitted batch job 8822853\n'
+K80 job resumed: 26
+V100 finished job: 31
+K80 finished job: 30
+K80 finished job: 38
+K80 finished job: 10
+V100 finished job: 47
+K80 finished job: 28
+K80 finished job: 33
+K80 finished job: 36
+K80 finished job: 48
+K80 finished job: 26
+finished all runs

@@ -27,8 +27,9 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-nodelist='c2179,d1009'
-testcase = 'random_practical_finish'
+nodelist='c2179,d1009' ### change this ###
+testcase = 'random_practical_finish_2' ### change this ###
+### also, change .h5 file folder in jobs ###
 
 INTERVAL = 60 # make decision every 30s
 QUALIFY_TIME = 600 # 600s or 10min as threshold
@@ -44,30 +45,56 @@ def random_promotion(V100_free, promote_list, force_demote):
         return random.sample(promote_list, V100_avail), force_demote
 
 # checks squeue every 10s to see if the job has ended
-def wait_till_job_ends(job):
+def wait_till_job_ends(job, gpu):
     CHECK_INTERVAL = 10 # 10s
+    cmd = 'squeue -u $USER --name=job' + job + '_' + gpu + ' --nodelist=' + nodelist + ' | awk \"/job/\" | awk \'{print $3}\''
     while True:
-        stdout = subprocess.run(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/job/\" | awk \'{print $3}\''],
-        shell=True, stdout=subprocess.PIPE).stdout
-        stdout = str(stdout)
-        job_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string, e.g. ['20', '48'...]
-        if job not in job_run:
-            break
+        try:
+            stdout = subprocess.check_output([cmd], shell=True)        
+            stdout = str(stdout)
+            job_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string, e.g. ['20', '48'...]
+            if job not in job_run:
+                break
+        except: #subprocess.CalledProcessError:
+            print('encountered squeue error when waiting for job to end')
         time.sleep(CHECK_INTERVAL)
+        scancel_job(job, gpu)
+        time.sleep(CHECK_INTERVAL)
+
+# checks output and makes sure no exception occurs
+def check_output(cmd):
+    RETRY_INTERVAL = 10
+    while True:
+        try:
+            stdout = subprocess.check_output([cmd], shell=True)
+            return stdout
+        except:
+            print('encountered scancel error when calling check_output function, retrying...')
+            time.sleep(RETRY_INTERVAL)
 
 # cancel job, and make sure there is no error with scancel command
 def scancel_job(job, gpu): # scancel_job('50', 'K')
     RETRY_INTERVAL = 10
     cmd = 'scancel --signal=TERM --name=job' + job + '_' + gpu + ' --nodelist=' + nodelist
     while True:
-        stdout = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE).stdout
-        stdout = str(stdout)       
-        if 'error' not in stdout:
+        try:
+            subprocess.check_output([cmd], shell=True)
             break
-        else:
-            print(stdout)
+        except:
             print('encountered scancel error, retrying...')
-        time.sleep(RETRY_INTERVAL)
+            time.sleep(RETRY_INTERVAL)
+
+# kill job, and make sure there is no error with scancel command
+def kill_job(job, gpu): # scancel_job('50', 'K')
+    RETRY_INTERVAL = 10
+    cmd = 'scancel --name=job' + job + '_' + gpu + ' --nodelist=' + nodelist
+    while True:
+        try:
+            subprocess.check_output([cmd], shell=True)
+            break
+        except: #subprocess.CalledProcessError:
+            print('encountered scancel error, retrying...')
+            time.sleep(RETRY_INTERVAL)
 
 # resume job, and make sure there is no error with sbatch submission
 def resume_job(job, gpu): # resume_job('1', 'V')
@@ -80,6 +107,7 @@ def resume_job(job, gpu): # resume_job('1', 'V')
         if 'Submitted batch job' in stdout:
             break
         else:
+            kill_job(job, gpu)
             print('encountered sbatch error on job resume, retrying...')
         time.sleep(RETRY_INTERVAL)
 
@@ -94,6 +122,7 @@ def start_job(job): # start_job('1')
         if 'Submitted batch job' in stdout:        
             break
         else:
+            kill_job(job, 'K')
             print('encountered sbatch error on job start, retrying...')
         time.sleep(RETRY_INTERVAL)
 
@@ -130,9 +159,23 @@ def check_practical_complete(job_list):
                         finished = False
                         break
                 if finished:
+                    print('job' + job + ' has reached practical complete, the last 4 loss values are')
+                    print(str(latest_loss))
                     pc_job.append(job)                                            
                     PJCT[job] = int(time.time() - job_start[job])
            
+
+############### first clear finish status of all jobs ####################
+
+finish_dict = {}
+with open('finish.json', 'r') as fp:
+    finish_dict = json.load(fp)
+for key in finish_dict:
+    finish_dict[key] = 0
+with open('finish.json', 'w') as fp:
+    json.dump(finish_dict, fp)
+
+######################################################################
 
 while True:
     
@@ -141,49 +184,22 @@ while True:
 
     ################### check for finished jobs on K80 and V100 ##############################
 
-    # check list of currently running K80 jobs
-    stdout = subprocess.run(['squeue -u $USER --nodelist=' + nodelist + ' | awk \"/_K/\" | awk \'{print $3}\''],
-    shell=True, stdout=subprocess.PIPE).stdout
-    stdout = str(stdout)
-    K80_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
+    with open('finish.json', 'r') as fp:
+        finish_dict = json.load(fp)
 
-    if set(K80_run) != set(K80_job):
-        # first get pending jobs, in case the job is still pending rather than finished
-        stdout = subprocess.run(['squeue -u $USER --state=PENDING | awk \"/_K/\" | awk \'{print $3}\''], shell=True,
-        stdout=subprocess.PIPE).stdout
-        stdout = str(stdout)
-        K80_pd = re.findall(r'\d+', stdout) # this is list of currently pending jobs in string       
+    for job in K80_job[:]:
+        if finish_dict['job'+job] == 1:
+            K80_used -= 1            
+            K80_job.remove(job)
+            print('K80 finished job: ' + job)
+            JCT[job] = int(time.time() - job_start[job])   
 
-        # now confirm if there are jobs that are finished
-        # this syncs K80_job and K80_run
-        for job in K80_job[:]:
-            if job not in K80_run and job not in K80_pd: # if the job is neither running nor pending
-                K80_used -= 1            
-                K80_job.remove(job)
-                print('K80 finished job: ' + job)
-                JCT[job] = int(time.time() - job_start[job])
-    
-    # check list of currently running V100 jobs
-    stdout = subprocess.run(['squeue -u $USER --nodelist=' + nodelist + '| awk \"/_V/\" | awk \'{print $3}\''],
-    shell=True, stdout=subprocess.PIPE).stdout
-    stdout = str(stdout)
-    V100_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
-    # now confirm if there are jobs that are finished
-    # this syncs V100_job and V100_run
-
-    if set(V100_run) != set(V100_job):
-        # first get pending jobs, in case the job is still pending rather than finished
-        stdout = subprocess.run(['squeue -u $USER --state=PENDING | awk \"/_V/\" | awk \'{print $3}\''], shell=True,
-        stdout=subprocess.PIPE).stdout
-        stdout = str(stdout)
-        V100_pd = re.findall(r'\d+', stdout) # this is list of currently pending jobs in string       
-
-        for job in V100_job[:]:
-            if job not in V100_run and job not in V100_pd:
-                V100_used -= 1            
-                V100_job.remove(job)
-                print('V100 finished job: ' + job)
-                JCT[job] = int(time.time() - job_start[job])
+    for job in V100_job[:]:
+        if finish_dict['job'+job] == 1:
+            V100_used -= 1            
+            V100_job.remove(job)
+            print('V100 finished job: ' + job)
+            JCT[job] = int(time.time() - job_start[job])
 
     ################ check for practical finished jobs on K80 and V100 ######################
 
@@ -197,6 +213,7 @@ while True:
             runtime = int(time.time() - job_start[job])
             if runtime >= QUALIFY_TIME:
                 qualified_job.append(job)
+                print('job' + job + ' has been qualified for promotion')
 
     ################ make promotion decisions ########################
 
@@ -227,14 +244,14 @@ while True:
 
         # resume promoted jobs on V100
         for job in promoted:
-            wait_till_job_ends(job)
+            wait_till_job_ends(job, 'K')
             resume_job(job, 'V')
             print('V100 job resumed: ' + job)
             V100_job.append(job)
             V100_used += 1
         # resume demoted jobs on K80
         for job in demoted:
-            wait_till_job_ends(job)
+            wait_till_job_ends(job, 'V')
             resume_job(job, 'K')
             print('K80 job resumed: ' + job)
             K80_job.append(job)
@@ -245,7 +262,7 @@ while True:
     # check if there are vacant K80s
     ## yes: submit jobs from queue
     ## no: do nothing
-    if K80_used != K80_cap:
+    if K80_used < K80_cap:
         K80_free = K80_cap - K80_used
         for i in range(K80_free):
             if index < len(queue):
@@ -257,14 +274,15 @@ while True:
                 index += 1
                 K80_used += 1
 
+    ############### wait for next iteration
+
+    time.sleep(INTERVAL)
 
     ################ check if termination condition is met ################
 
     if len(K80_job) == 0 and len(V100_job) == 0 and index == len(queue):
         break
 
-    # this loop performs actions every 30s
-    time.sleep(INTERVAL)
 
 # get average JCT
 average_JCT = np.average(list(JCT.values()))
@@ -280,3 +298,7 @@ with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
 with open(PJCT_name, 'w') as fp2:
     json.dump(PJCT, fp2, sort_keys=True, indent=4)
+
+
+
+

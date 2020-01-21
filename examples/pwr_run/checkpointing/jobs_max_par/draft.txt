@@ -1,0 +1,44 @@
+    # check list of currently running K80 jobs
+    cmd = 'squeue -u $USER --nodelist=' + nodelist + ' | awk \"/_K/\" | awk \'{print $3}\''
+    stdout = check_output(cmd)
+    stdout = str(stdout)
+    K80_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
+
+    if set(K80_run) != set(K80_job):
+        # first get pending jobs, in case the job is still pending rather than finished
+        cmd = 'squeue -u $USER --state=PENDING | awk \"/_K/\" | awk \'{print $3}\''
+        stdout = check_output(cmd)
+        stdout = str(stdout)
+        K80_pd = re.findall(r'\d+', stdout) # this is list of currently pending jobs in string       
+
+        # now confirm if there are jobs that are finished
+        # this syncs K80_job and K80_run
+        for job in K80_job[:]:
+            if job not in K80_run and job not in K80_pd: # if the job is neither running nor pending
+                K80_used -= 1            
+                K80_job.remove(job)
+                print('K80 finished job: ' + job)
+                JCT[job] = int(time.time() - job_start[job])
+
+
+    # check list of currently running V100 jobs
+    cmd = 'squeue -u $USER --nodelist=' + nodelist + '| awk \"/_V/\" | awk \'{print $3}\''
+    stdout = check_output(cmd) 
+    stdout = str(stdout)
+    V100_run = re.findall(r'\d+', stdout) # this is list of currently running jobs in string
+    # now confirm if there are jobs that are finished
+    # this syncs V100_job and V100_run
+
+    if set(V100_run) != set(V100_job):
+        # first get pending jobs, in case the job is still pending rather than finished
+        cmd = 'squeue -u $USER --state=PENDING | awk \"/_V/\" | awk \'{print $3}\''
+        stdout = check_output(cmd) 
+        stdout = str(stdout)
+        V100_pd = re.findall(r'\d+', stdout) # this is list of currently pending jobs in string       
+
+        for job in V100_job[:]:
+            if job not in V100_run and job not in V100_pd:
+                V100_used -= 1            
+                V100_job.remove(job)
+                print('V100 finished job: ' + job)
+                JCT[job] = int(time.time() - job_start[job])
