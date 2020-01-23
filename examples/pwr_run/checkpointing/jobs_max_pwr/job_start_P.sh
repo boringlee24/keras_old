@@ -10,4 +10,4 @@
 #SBATCH --gres=gpu:p100:1                              # reserves 1 gpu per machine
 #SBATCH --exclude=c[2184,2192],d[1005,1013]   #[2204-2207]
 
-srun ./run.sh ${MYJOB} & python ${MYJOB}.py --tc ${TESTCASE} 
+srun python ${MYJOB}.py --tc ${TESTCASE} 

@@ -1,8 +1,8 @@
 #!/bin/bash
-echo "run nvidia-smi command to monitor gpu power"
+#echo "run nvidia-smi command to monitor gpu power"
 
 # run for 10min (600s) 
-RUN_TIME=600
+RUN_TIME=600 
 JOB=$1  #"job1"
 DATA_PATH="/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/"
 

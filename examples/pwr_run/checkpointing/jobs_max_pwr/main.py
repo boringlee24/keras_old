@@ -245,7 +245,6 @@ while True:
         if job not in qualified_job:
             pwr_meas = power_dict['job'+job]
             if pwr_meas > 0:
-                pdb.set_trace()
                 qualified_job.append(job)
                 print('job' + job + ' has been qualified for promotion')
 
@@ -259,7 +258,7 @@ while True:
 
     if len(promote_list) > 0:
         #promoted, demoted = random_promotion(V100_free, promote_list, force_demote)
-        promoted, demoted = max_param_promotion(V100_job, promote_list, force_demote) 
+        promoted, demoted = max_power_promotion(V100_job, promote_list, force_demote) 
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
