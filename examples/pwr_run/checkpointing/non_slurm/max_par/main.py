@@ -37,8 +37,8 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2178'
-V100_node = 'd1021'
+K80_node = 'c2176'
+V100_node = 'd1004'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -73,26 +73,41 @@ def send_signal(node, cmd):
         #print('closing socket')
         sock.close()
 
-# takes in a list of jobs qualified for promote, returns a list of jobs that get upgraded, and an empty list for demoted
-# jobs
-def random_promotion(K80_free, V100_free, promote_list, force_demote):
+def max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demote):
     num_demote = len(force_demote)
-    num_promote = len(promote_list)
+    num_promote = len(promote_list)  
+    V100_vacant = num_demote + V100_free
+    K80_vacant = num_promote + K80_free 
+    param_dict = {}
+    with open('param.json', 'r') as fp:
+        param_dict = json.load(fp)
 
-    # if more promote jobs than demote jobs, always demote all demote jobs
-    if len(promote_list) >= len(force_demote):
-        V100_avail = num_demote + V100_free
-        if V100_avail >= len(promote_list):
+    if K80_vacant >= num_demote: # if more vacant K80s than demote jobs, always demote
+        # selectively promote among active V100 jobs and promote list jobs
+        V100_qual = list(set(list(V100_job.values())) - set(force_demote)).remove('idle')
+        V100_pool = list(set(V100_qual).union(promote_list))
+        if len(V100_pool) <= 4: # promote all jobs as well
             return promote_list, force_demote
-        else:
-            return random.sample(promote_list, V100_avail), force_demote
-    # if more demote jobs than promote jobs, always promote all promote jobs
+        else: # promote the top 4 jobs            
+            pool_dict = {}
+            for job in V100_pool:
+                if 'job'+job in param_dict:
+                    pool_dict[job] = param_dict['job'+job]        
+            sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:4] 
+            promotion_list = list(set(promote_list).intersection(sorted_pool))                     
+            demotion_list = list(set(list(V100_job.values())).difference(sorted_pool)).remove('idle') # this includes force demotion
+            return promotion_list, demotion_list
+    elif V100_vacant >= num_promote: # if more vacant V100s than promote jobs, always promote
+        # less vacant K80s than demote jobs, select worst among force demote list
+        pool_dict = {} # here the pool only includes force demote jobs
+        for job in force_demote:
+             if 'job'+job in param_dict:
+                pool_dict[job] = param_dict['job'+job]
+        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:K80_vacant] 
+        return promote_list, sorted_pool
     else:
-        K80_avail = num_promote + K80_free
-        if K80_avail >= len(force_demote):
-            return promote_list, force_demote
-        else:
-            return promote_list, random.sample(force_demote, K80_avail)
+        raise ValueError('Bug with max param promotion, condition not considered')
+
 
 def save_job(node, job): # save_job('c2176', '50')
     send_signal(node, 'save ' + job)
@@ -145,11 +160,24 @@ def start_job(node, gpu, job):
         else:
             time.sleep(1)   
 
+    while True:
+        if os.path.exists('param.json'):
+            os.rename('param.json', 'param_lock.json')
+            break
+        else:
+            time.sleep(1)   
+
     cmd = 'start ' + job + ' gpu ' + gpu
     send_signal(node, cmd)   
 
     while True:
         if os.path.exists('pid.json'):
+            break
+        else:
+            time.sleep(1)
+
+    while True:
+        if os.path.exists('param.json'):
             break
         else:
             time.sleep(1)
@@ -222,6 +250,15 @@ json_file = json.dumps(checkpoint_dict)
 with open('checkpoint.json', 'w') as fp:
     fp.write(json_file) 
 
+param_dict = {}
+with open('param.json', 'r') as fp:
+    param_dict = json.load(fp)
+for key in param_dict:
+    param_dict[key] = 0
+json_file = json.dumps(param_dict)
+with open('param.json', 'w') as fp:
+    fp.write(json_file) 
+
 ######################################################################
 
 while True:
@@ -274,7 +311,7 @@ while True:
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
 
     if len(promote_list) > 0:
-        promoted, demoted = random_promotion(K80_free, V100_free, promote_list, force_demote)
+        promoted, demoted = max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:

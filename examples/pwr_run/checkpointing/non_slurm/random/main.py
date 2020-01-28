@@ -159,7 +159,7 @@ def start_job(node, gpu, job):
 # criteria for practical complete: loss improvement has been smaller than 0.01 for last 3 consecutive epochs
 def check_practical_complete(job_list):
     log_path = '/scratch/li.baol/tsrbrd_log/job_runs/' + testcase + '/'
-    threshold = 0.01
+    threshold = 0.001
     global pc_job
     global PJCT
     for job in job_list:
