@@ -59,6 +59,7 @@ while True:
             data = connection.recv(32)
             if data:
                 data_str = data.decode('utf-8')
+                print('received ' + data_str)
                 if 'nvidia-smi' in data_str:
                     if 'nvidia-smi 0' in data_str:
                         cmd = './run.sh job24'

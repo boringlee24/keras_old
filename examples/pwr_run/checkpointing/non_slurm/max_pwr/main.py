@@ -37,8 +37,8 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2176'
-V100_node = 'd1004'
+K80_node = 'c2177'
+V100_node = 'd1005'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -73,14 +73,14 @@ def send_signal(node, cmd):
         #print('closing socket')
         sock.close()
 
-def max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demote):
+def max_power_promotion(K80_free, V100_free, V100_job, promote_list, force_demote):
     num_demote = len(force_demote)
     num_promote = len(promote_list)  
     V100_vacant = num_demote + V100_free
     K80_vacant = num_promote + K80_free 
-    param_dict = {}
-    with open('param.json', 'r') as fp:
-        param_dict = json.load(fp)
+    power_dict = {}
+    with open('power.json', 'r') as fp:
+        power_dict = json.load(fp)
     if K80_vacant >= num_demote: # if more vacant K80s than demote jobs, always demote
         # selectively promote among active V100 jobs and promote list jobs
         V100_qual = list(set(list(V100_job.values())) - set(force_demote))
@@ -92,28 +92,27 @@ def max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demot
         else: # promote the top 4 jobs            
             pool_dict = {}
             for job in V100_pool:
-                if 'job'+job in param_dict:
-                    pool_dict[job] = param_dict['job'+job]        
+                if 'job'+job in power_dict:
+                    pool_dict[job] = power_dict['job'+job]        
             sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:4] 
             promotion_list = list(set(promote_list).intersection(sorted_pool))                     
             demotion_list = list(set(list(V100_job.values())).difference(sorted_pool))
-            if 'idle' in demotion_list:
+            if 'idle' in V100_qual:
                 demotion_list.remove('idle') # this includes force demotion
             return promotion_list, demotion_list
     elif V100_vacant >= num_promote: # if more vacant V100s than promote jobs, always promote
         # less vacant K80s than demote jobs, select worst among force demote list
         pool_dict = {} # here the pool only includes force demote jobs
         for job in force_demote:
-             if 'job'+job in param_dict:
-                pool_dict[job] = param_dict['job'+job]
+             if 'job'+job in power_dict:
+                pool_dict[job] = power_dict['job'+job]
         sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:K80_vacant] 
         return promote_list, sorted_pool
     else:
-        raise ValueError('Bug with max param promotion, condition not considered')
+        raise ValueError('Bug with max power promotion, condition not considered')
 
-#a, b = max_param_promotion(1, 1, {0: '49', 1: '39', 2: '50', 3: 'idle'}, ['40', '37'], []) 
-#c, d = max_param_promotion(1, 1, {0: 'idle', 1: 'idle', 2: 'idle', 3: 'idle'}, [], [])
-#e, f = max_param_promotion(1, 1, {'0': '49', '1': '39', '2': '50', '3': 'idle'}, ['40', '37'], []) 
+#a, b = max_power_promotion(1, 1, {0: '49', 1: '39', 2: '50', 3: 'idle'}, ['40', '37'], []) 
+#c, d = max_power_promotion(1, 1, {0: 'idle', 1: 'idle', 2: 'idle', 3: 'idle'}, [], []) 
 
 def save_job(node, job): # save_job('c2176', '50')
     send_signal(node, 'save ' + job)
@@ -166,13 +165,6 @@ def start_job(node, gpu, job):
         else:
             time.sleep(1)   
 
-    while True:
-        if os.path.exists('param.json'):
-            os.rename('param.json', 'param_lock.json')
-            break
-        else:
-            time.sleep(1)   
-
     cmd = 'start ' + job + ' gpu ' + gpu
     send_signal(node, cmd)   
 
@@ -182,12 +174,11 @@ def start_job(node, gpu, job):
         else:
             time.sleep(1)
 
-    while True:
-        if os.path.exists('param.json'):
-            break
-        else:
-            time.sleep(1)
-   
+# measure job
+def measure_job(node, gpu, job):
+    cmd = 'measure ' + job + ' gpu ' + gpu
+    send_signal(node, cmd)
+
 # function that checks the tensorboard log of currently running jobs and logs practical complete jobs in a global list
 # once a job reaches practical complete, it cannot be promoted. If it's already promoted, it gets demoted.
 # criteria for practical complete: loss improvement has been smaller than 0.01 for last 3 consecutive epochs
@@ -256,13 +247,13 @@ json_file = json.dumps(checkpoint_dict)
 with open('checkpoint.json', 'w') as fp:
     fp.write(json_file) 
 
-param_dict = {}
-with open('param.json', 'r') as fp:
-    param_dict = json.load(fp)
-for key in param_dict:
-    param_dict[key] = 0
-json_file = json.dumps(param_dict)
-with open('param.json', 'w') as fp:
+power_dict = {}
+with open('power.json', 'r') as fp:
+    power_dict = json.load(fp)
+for key in power_dict:
+    power_dict[key] = 0
+json_file = json.dumps(power_dict)
+with open('power.json', 'w') as fp:
     fp.write(json_file) 
 
 ######################################################################
@@ -300,10 +291,13 @@ while True:
 
     ################ check run time of current K80 job, update qualified_job #################
 
+    with open('power.json', 'r') as fp:
+        power_dict = json.load(fp)   
+
     for job in list(K80_job.values()):
         if job not in qualified_job and job != 'idle':
-            runtime = int(time.time() - job_start[job])
-            if runtime >= QUALIFY_TIME:
+            pwr_meas = power_dict['job'+job]
+            if pwr_meas > 0:
                 qualified_job.append(job)
                 print('job' + job + ' has been qualified for promotion')
 
@@ -317,7 +311,7 @@ while True:
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
 
     if len(promote_list) > 0:
-        promoted, demoted = max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
+        promoted, demoted = max_power_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
@@ -377,6 +371,7 @@ while True:
                 for gpu, job in K80_job.items():
                     if job == 'idle': # schedule new job here if idle
                         start_job(K80_node, gpu, job_new)
+                        measure_job(K80_node, gpu, job_new)
                         K80_job[gpu] = job_new
                         job_start[job_new] = time.time()
                         index += 1

@@ -60,10 +60,12 @@ while True:
             if data:
                 data_str = data.decode('utf-8')
                 print('received ' + data_str)
-                if 'nvidia-smi' in data_str:
-                    if 'nvidia-smi 0' in data_str:
-                        cmd = './run.sh job24'
-                        subprocess.Popen([cmd], shell=True)
+                if 'measure' in data_str: # 'measure job20 gpu 3'
+                    jobid = re.findall(r'\d+', data_str)[0]
+                    gpuid = re.findall(r'\d+', data_str)[1]
+                    cmd = './run.sh job' + jobid + ' ' + gpuid
+                    print('measuring power for job' + jobid + ' at gpu ' + gpuid)
+                    subprocess.Popen([cmd], shell=True)
                 elif 'start' in data_str: # 'start 15 gpu 2'
                     jobid = re.findall(r'\d+', data_str)[0]
                     out_file = log_dir + jobid + '.out'
