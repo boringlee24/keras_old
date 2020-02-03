@@ -2,7 +2,7 @@
 #echo "run nvidia-smi command to monitor gpu power"
 
 # run for 10min (600s) 
-RUN_TIME=60 #TODO 
+RUN_TIME=600 
 JOB=$1  #"job1"
 GPU=$2
 DATA_PATH="/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/"
@@ -12,9 +12,9 @@ DATA_PATH="/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/"
 # in main.py, check if the power exist, if yes, job qualified for promote
 sleep 30;
 
-timeout ${RUN_TIME} nvidia-smi -i ${GPU} --query-gpu=index,timestamp,power.draw,memory.used,utilization.memory,utilization.gpu,temperature.gpu --format=csv,nounits -lms 100 --filename=${DATA_PATH}${JOB}.csv;
+timeout ${RUN_TIME} nvidia-smi -i ${GPU} --query-gpu=index,timestamp,power.draw,memory.used,utilization.memory,utilization.gpu,temperature.gpu --format=csv,nounits -lms 100 --filename=${DATA_PATH}${JOB}.csv &
 
-python gpu_pwr.py $JOB
+sleep 605 && python gpu_pwr.py $JOB
 
 #mv ${DATA_PATH}${JOB}.csv ${DATA_PATH}${JOB}_finish.csv
 

@@ -34,22 +34,6 @@ log_dir = '/scratch/li.baol/jobs_logs/' + testcase + '/' # this is dir for train
 pid_dict = {}
 checkpoint_dict = {}
 
-#def busy_sleep(seconds):
-#    start_time = datetime.datetime.now()
-#    seconds_slept = 0
-#    while seconds_slept < seconds:
-#        time.sleep(seconds - seconds_slept)
-#        seconds_slept = (datetime.datetime.now() - start_time).total_seconds()
-
-#def check_pid(pid):        
-#    """ Check For the existence of a unix pid. """
-#    try:
-#        os.kill(pid, 0)
-#    except OSError:
-#        return False
-#    else:
-#        return True
-
 while True:
     # Wait for a connection
     connection, client_address = sock.accept()
@@ -65,7 +49,22 @@ while True:
                     gpuid = re.findall(r'\d+', data_str)[1]
                     cmd = './run.sh job' + jobid + ' ' + gpuid
                     print('measuring power for job' + jobid + ' at gpu ' + gpuid)
-                    subprocess.Popen([cmd], shell=True)
+
+                    meas_pid = subprocess.Popen([cmd], shell=True).pid
+                    run_pid_dict = {}
+                    while True:
+                        if os.path.exists('run_pid.json'):
+                            os.rename('run_pid.json', 'run_pid_lock.json')
+                            break
+                        else:
+                            time.sleep(1)
+                    with open('run_pid_lock.json', 'r') as fp:
+                        run_pid_dict = json.load(fp)
+                    run_pid_dict['job'+jobid] = meas_pid
+                    json_file = json.dumps(run_pid_dict)
+                    with open('run_pid_lock.json', 'w') as fp:
+                        fp.write(json_file)
+                    os.rename('run_pid_lock.json', 'run_pid.json')
                 elif 'start' in data_str: # 'start 15 gpu 2'
                     jobid = re.findall(r'\d+', data_str)[0]
                     out_file = log_dir + jobid + '.out'
@@ -97,7 +96,16 @@ while True:
                     print('sending checkpointing command to PID ' + str(pid))
                     subprocess.Popen([cmd], shell=True)
                     print('checkpointing job' + jobid)
-                       
+                elif 'kill' in data_str: # 'kill 15', kills the run.sh processes
+                    jobid = re.findall(r'\d+', data_str)[0]
+                    with open('run_pid.json', 'r') as fp1:
+                        run_pid_dict = json.load(fp1)
+                    run_pid = run_pid_dict['job'+jobid]
+                    cmd = 'pkill -15 -P ' + str(run_pid)
+                    print('sending kill command to run.sh PID ' + str(run_pid))
+                    subprocess.Popen([cmd], shell=True)
+
+
 #                        if not check_pid(pid): # if this pid doesn't exist any more
 #                            break
 #                        elif psutil.Process(pid).status() != psutil.STATUS_ZOMBIE: # if pid exist but is a zombie

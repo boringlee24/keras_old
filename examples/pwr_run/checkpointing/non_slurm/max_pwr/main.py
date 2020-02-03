@@ -37,8 +37,8 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2177'
-V100_node = 'd1005'
+K80_node = 'c2178'
+V100_node = 'd1004'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -97,7 +97,7 @@ def max_power_promotion(K80_free, V100_free, V100_job, promote_list, force_demot
             sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:4] 
             promotion_list = list(set(promote_list).intersection(sorted_pool))                     
             demotion_list = list(set(list(V100_job.values())).difference(sorted_pool))
-            if 'idle' in V100_qual:
+            if 'idle' in demotion_list:
                 demotion_list.remove('idle') # this includes force demotion
             return promotion_list, demotion_list
     elif V100_vacant >= num_promote: # if more vacant V100s than promote jobs, always promote
@@ -115,8 +115,27 @@ def max_power_promotion(K80_free, V100_free, V100_job, promote_list, force_demot
 #c, d = max_power_promotion(1, 1, {0: 'idle', 1: 'idle', 2: 'idle', 3: 'idle'}, [], []) 
 
 def save_job(node, job): # save_job('c2176', '50')
+    # first wait for the job to be qualified for checkpointing
+    while True: # wait for ckpt_qual.json to be available
+        if os.path.exists('ckpt_qual.json'):
+            with open('ckpt_qual.json', 'r') as fp2:
+                ckpt_qual_dict = json.load(fp2)
+            if ckpt_qual_dict['job'+job] == 1:
+                if os.path.exists('ckpt_qual.json'): #if not locked. lock it and edit
+                    os.rename('ckpt_qual.json', 'ckpt_qual_lock.json') # lock
+                    with open('ckpt_qual_lock.json', 'r') as fp2:
+                        ckpt_qual_lock_dict = json.load(fp2)
+                    ckpt_qual_lock_dict['job'+job] = 0 # reset it
+                    json_file = json.dumps(ckpt_qual_lock_dict)
+                    with open('ckpt_qual_lock.json', 'w') as fp2:
+                        fp2.write(json_file)
+                    os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
+                    break
+        time.sleep(5)
+    # after passing the ready check, send signal to checkpoint
     send_signal(node, 'save ' + job)
-    # after sending checkpoint signal, wait for it to finish 
+
+    # after sending checkpoint signal, wait for it to finish
     while True:
         time.sleep(5)
         with open('checkpoint.json', 'r') as fp2:
@@ -133,7 +152,9 @@ def save_job(node, job): # save_job('c2176', '50')
             finish_dict = json.load(fp3)
         if finish_dict['job'+job] == 1:
             break
- 
+
+def kill_job(node, job): # kill_job('c2176', '50')
+    send_signal(node, 'kill ' + job)
 
 # resume job
 def resume_job(node, gpu, job): # resume_job('c2176', '3', '50')
@@ -256,6 +277,27 @@ json_file = json.dumps(power_dict)
 with open('power.json', 'w') as fp:
     fp.write(json_file) 
 
+run_pid_dict = {}
+with open('run_pid.json', 'r') as fp:
+    run_pid_dict = json.load(fp)
+for key in run_pid_dict:
+    run_pid_dict[key] = 0
+json_file = json.dumps(run_pid_dict)
+with open('run_pid.json', 'w') as fp:
+    fp.write(json_file) 
+
+ckpt_qual_dict = {}
+with open('ckpt_qual.json', 'r') as fp:
+    ckpt_qual_dict = json.load(fp)
+for key in ckpt_qual_dict:
+    ckpt_qual_dict[key] = 0
+json_file = json.dumps(ckpt_qual_dict)
+with open('ckpt_qual.json', 'w') as fp:
+    fp.write(json_file) 
+
+#start_job(K80_node, '0', '39')
+#save_job(K80_node, '39')
+
 ######################################################################
 
 while True:
@@ -274,7 +316,10 @@ while True:
                 K80_used -= 1            
                 K80_job[gpu] = 'idle'
                 print('K80 finished job: ' + job)
-                JCT[job] = int(time.time() - job_start[job])   
+                JCT[job] = int(time.time() - job_start[job])  
+                # if the job is not qualified for promotion, kill its run.sh processes
+                if job not in qualified_job:
+                    kill_job(K80_node, job) 
 
     for gpu, job in V100_job.items():
         if job != 'idle':
