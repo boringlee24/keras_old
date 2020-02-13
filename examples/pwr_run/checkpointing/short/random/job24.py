@@ -176,8 +176,11 @@ callbacks = [tensorboard_callback, my_callback]
 ckpt_qual_dict = {}
 while True:
     if os.path.exists('ckpt_qual.json'):
-        os.rename('ckpt_qual.json', 'ckpt_qual_lock.json')
-        break
+        try:
+            os.rename('ckpt_qual.json', 'ckpt_qual_lock.json')
+            break
+        except Exception:
+            pass
     else:
         time.sleep(1)
 with open('ckpt_qual_lock.json', 'r') as fp:
@@ -207,8 +210,11 @@ print('Test accuracy:', scores[1])
 finish_dict = {}
 while True:
     if os.path.exists('finish.json'):
-        os.rename('finish.json', 'finish_lock.json')
-        break
+        try:
+            os.rename('finish.json', 'finish_lock.json')
+            break
+        except Exception:
+            pass
     else:
         time.sleep(1)
 with open('finish_lock.json', 'r') as fp:

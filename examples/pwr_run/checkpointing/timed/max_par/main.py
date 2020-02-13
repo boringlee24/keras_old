@@ -59,8 +59,8 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2180'
-V100_node = 'd1021'
+K80_node = 'c2178'
+V100_node = 'd1020'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -193,43 +193,26 @@ def save_job(node, job): # save_job('c2176', '50')
                 ckpt_qual_dict = json.load(fp2)
             if ckpt_qual_dict['job'+job] == 1:
                 if os.path.exists('ckpt_qual.json'): #if not locked. lock it and edit
-                    os.rename('ckpt_qual.json', 'ckpt_qual_lock.json') # lock
-                    with open('ckpt_qual_lock.json', 'r') as fp2:
-                        ckpt_qual_lock_dict = json.load(fp2)
-                    ckpt_qual_lock_dict['job'+job] = 0 # reset it
-                    json_file = json.dumps(ckpt_qual_lock_dict)
-                    with open('ckpt_qual_lock.json', 'w') as fp2:
-                        fp2.write(json_file)
-                    os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
-                    break
+                    try:
+                        os.rename('ckpt_qual.json', 'ckpt_qual_lock.json') # lock
+                        with open('ckpt_qual_lock.json', 'r') as fp2:
+                            ckpt_qual_lock_dict = json.load(fp2)
+                        ckpt_qual_lock_dict['job'+job] = 0 # reset it
+                        json_file = json.dumps(ckpt_qual_lock_dict)
+                        with open('ckpt_qual_lock.json', 'w') as fp2:
+                            fp2.write(json_file)
+                        os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
+                        break
+                    except Exception:
+                        pass
         time.sleep(5)
 
     send_signal(node, 'save ' + job)
 
     global ovhd_start
     global pc_job
-    if job not in pc_job:
-        ovhd_start[job] = time.time() 
-
-            if ckpt_qual_dict['job'+job] == 1:
-                if os.path.exists('ckpt_qual.json'): #if not locked. lock it and edit
-                    os.rename('ckpt_qual.json', 'ckpt_qual_lock.json') # lock
-                    with open('ckpt_qual_lock.json', 'r') as fp2:
-                        ckpt_qual_lock_dict = json.load(fp2)
-                    ckpt_qual_lock_dict['job'+job] = 0 # reset it
-                    json_file = json.dumps(ckpt_qual_lock_dict)
-                    with open('ckpt_qual_lock.json', 'w') as fp2:
-                        fp2.write(json_file)
-                    os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
-                    break
-        time.sleep(5)
-
-    send_signal(node, 'save ' + job)
-
-    global ovhd_start
-    global pc_job
-    if job not in pc_job:
-        ovhd_start[job] = time.time() 
+    #if job not in pc_job:
+    ovhd_start[job] = time.time() 
 
     # after sending checkpoint signal, wait for it to finish 
     while True:
@@ -388,10 +371,15 @@ json_file = json.dumps(ckpt_qual_dict)
 with open('ckpt_qual.json', 'w') as fp:
     fp.write(json_file) 
 
-epoch_list = [] 
-json_file = json.dumps(epoch_list)
-with open('epoch.json', 'w') as fp:
-    fp.write(json_file) 
+#files = glob.glob('epoch/job*.txt') 
+#files.sort(key=lambda x: os.path.getmtime(x))
+#pdb.set_trace()
+#job = files[0].split('/')[1].split('.')[0].replace('job', '')
+
+# remove all files in epoch folder
+files = glob.glob('epoch/*')
+for f in files:
+    os.remove(f)
 
 ######################################################################
 
@@ -464,6 +452,7 @@ while True:
     promote_list_new = list(set(promote_list).difference(promote_idle))
 
     if len(promote_idle) > 0:
+        print('promoted jobs to idle: ', promote_idle)
         # stop all promoted jobs on K80
         for gpu, job in K80_job.items():
             if job in promote_idle:
@@ -476,8 +465,8 @@ while True:
             for gpu, job in V100_job.items():
                 if job == 'idle': # if gpu idle, schedule new job here
                     resume_job(V100_node, gpu, job_new)
-                    if job_new not in pc_job:
-                        num_mig[job_new] += 1
+                    #if job_new not in pc_job:
+                    num_mig[job_new] += 1
                     V100_job[gpu] = job_new
                     promote_idle.remove(job_new)
                     V100_used += 1
@@ -486,65 +475,59 @@ while True:
     K80_free = K80_cap - K80_used
 
     # check for jobs with epoch end
-    if os.path.exists('epoch.json'): 
-        V100_epoch = []
-        os.rename('epoch.json', 'epoch_lock.json') # lock
-        with open('epoch_lock.json', 'r') as fp2:
-            epoch_list = json.load(fp2)      
-        # look for jobs at epoch end
-        if len(epoch_list) > 0:
-            # job needs to be V100 running job
-            job = epoch_list[0].replace('job', '')
-            epoch_list.pop(0)
-            if job in V100_job.values() and job not in promote_idle:
-                V100_epoch.append(job)
-            # write back
-            json_file = json.dumps(epoch_list)
-            with open('epoch_lock.json', 'w') as fp2:
-                fp2.write(json_file)
-        os.rename('epoch_lock.json', 'epoch.json')
 
-        # now make promotion decision on V100_epoch[0]
-        promoted_job, demoted_job = max_param_one(K80_free, V100_epoch[0], promote_list_new, force_demote)
+    files = glob.glob('epoch/job*.txt') 
+    files.sort(key=lambda x: os.path.getmtime(x))
 
-        if len(promoted_job) > 0:
-            for gpu, job in K80_job.items():
-                if job in promoted_job:
-                    save_job(K80_node, job)
-                    K80_job[gpu] = 'idle'
-                    K80_used -= 1          
-        if len(demoted_job) > 0:
-            for gpu, job in V100_job.items():
-                if job in demoted_job:
-                    save_job(V100_node, job)
-                    V100_job[gpu] = 'idle'
-                    V100_used -= 1          
-        if len(promoted_job) > 0:
-            job_new = promoted_job[0]
-            for gpu, job in V100_job.items():
-                if job == 'idle': # if gpu idle, schedule new job here
-                    resume_job(V100_node, gpu, job_new)
-                    if job_new not in pc_job:
+    V100_epoch = []
+
+    if len(files) > 0:
+        job = files[0].split('/')[1].split('.')[0].replace('job', '')
+        os.remove(files[0])
+        if job in V100_job.values() and job not in promote_idle:
+            V100_epoch.append(job)
+        if len(V100_epoch) > 0:
+            promoted_job, demoted_job = max_param_one(K80_free, V100_epoch[0], promote_list_new, force_demote)
+
+            if len(promoted_job) > 0:
+                print('promoted jobs: ', promoted_job)
+                for gpu, job in K80_job.items():
+                    if job in promoted_job:
+                        save_job(K80_node, job)
+                        K80_job[gpu] = 'idle'
+                        K80_used -= 1          
+            if len(demoted_job) > 0:
+                print('demoted jobs: ', demoted_job)
+                for gpu, job in V100_job.items():
+                    if job in demoted_job:
+                        save_job(V100_node, job)
+                        V100_job[gpu] = 'idle'
+                        V100_used -= 1          
+            if len(promoted_job) > 0:
+                job_new = promoted_job[0]
+                for gpu, job in V100_job.items():
+                    if job == 'idle': # if gpu idle, schedule new job here
+                        resume_job(V100_node, gpu, job_new)
+                        #if job_new not in pc_job:
                         num_mig[job_new] += 1
-                    V100_job[gpu] = job_new
-                    promoted_job.remove(job_new)
-                    V100_used += 1
-                    break
-        if len(demoted_job) > 0:
-            job_new = demoted_job[0]
-            for gpu, job in K80_job.items():
-                if job == 'idle': # if gpu idle, schedule new job here
-                    resume_job(K80_node, gpu, job_new)
-                    if job_new not in pc_job:
+                        V100_job[gpu] = job_new
+                        promoted_job.remove(job_new)
+                        V100_used += 1
+                        break
+            if len(demoted_job) > 0:
+                job_new = demoted_job[0]
+                for gpu, job in K80_job.items():
+                    if job == 'idle': # if gpu idle, schedule new job here
+                        resume_job(K80_node, gpu, job_new)
+                        #if job_new not in pc_job:
                         num_mig[job_new] += 1
-                    K80_job[gpu] = job_new
-                    demoted_job.remove(job_new)
-                    K80_used += 1
-                    break
-        # perform a check, make sure all promoted/demoted jobs are scheduled
-        if len(promoted_job) > 0 or len(demoted_job) > 0:
-            raise ValueError('Bug with promotion scheme, more jobs than free gpus')
-
+                        K80_job[gpu] = job_new
+                        demoted_job.remove(job_new)
+                        K80_used += 1
+                        break
+            # perform a check, make sure all promoted/demoted jobs are scheduled
+            if len(promoted_job) > 0 or len(demoted_job) > 0:
+                raise ValueError('Bug with promotion scheme, more jobs than free gpus')
 
     ################ submit new jobs to vacant K80 GPUs ############################
 
@@ -569,7 +552,7 @@ while True:
 
     ############### wait for next iteration
 
-    #time.sleep(INTERVAL)
+    time.sleep(1)
 
     ################ check if termination condition is met ################
 

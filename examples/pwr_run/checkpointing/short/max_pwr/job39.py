@@ -44,6 +44,8 @@ batch_size = 128
 args_lr = 0.003
 args_model = 'densenet121'
 
+epoch_begin_time = 0
+
 job_name = sys.argv[0].split('.')[0]
 save_files = '/scratch/li.baol/checkpoint_max_pwr/' + job_name + '*'
 
@@ -138,6 +140,18 @@ current_epoch = 0
 ################### connects interrupt signal to the process #####################
 
 def terminateProcess(signalNumber, frame):
+    # first record the wasted epoch time
+    global epoch_begin_time
+    epoch_waste_time = int(time.time() - epoch_begin_time)
+
+    epoch_waste_dict = {}
+    with open('epoch_waste.json', 'r') as fp:
+        epoch_waste_dict = json.load(fp)
+    epoch_waste_dict[job_name] += epoch_waste_time
+    json_file3 = json.dumps(epoch_waste_dict)
+    with open('epoch_waste.json', 'w') as fp:
+        fp.write(json_file3)
+
     print('checkpointing the model triggered by kill -15 signal')
     # delete whatever checkpoint that already exists
     for f in glob.glob(save_files):
@@ -169,28 +183,19 @@ class PrintEpoch(keras.callbacks.Callback):
         #remaining_epochs = epochs - epoch
         current_epoch = epoch
         print('current epoch ' + str(current_epoch))
+        global epoch_begin_time
+        epoch_begin_time = time.time()
 
 my_callback = PrintEpoch()
 
 callbacks = [tensorboard_callback, my_callback]
  #[checkpoint, lr_reducer, lr_scheduler, tensorboard_callback]
 
-ckpt_qual_dict = {}
-while True:
-    if os.path.exists('ckpt_qual.json'):
-        os.rename('ckpt_qual.json', 'ckpt_qual_lock.json')
-        break
-    else:
-        time.sleep(1)
-with open('ckpt_qual_lock.json', 'r') as fp:
-    ckpt_qual_dict = json.load(fp)
-ckpt_qual_dict[job_name] = 1
-json_file2 = json.dumps(ckpt_qual_dict)
-with open('ckpt_qual_lock.json', 'w') as fp:
-    fp.write(json_file2)
-os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
-
 # Run training
+
+# creates an file if job qualified for checkpoint
+open('ckpt_qual/' + job_name + '.txt', 'a').close()
+
 model.fit(x_train, y_train,
           batch_size=batch_size,
           epochs=round(total_epochs/2),
@@ -209,8 +214,11 @@ print('Test accuracy:', scores[1])
 finish_dict = {}
 while True:
     if os.path.exists('finish.json'):
-        os.rename('finish.json', 'finish_lock.json')
-        break
+        try:
+            os.rename('finish.json', 'finish_lock.json')
+            break
+        except Exception:
+            pass
     else:
         time.sleep(1)
 with open('finish_lock.json', 'r') as fp:

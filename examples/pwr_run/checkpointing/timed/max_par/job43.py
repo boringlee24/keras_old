@@ -169,30 +169,12 @@ class PrintEpoch(keras.callbacks.Callback):
         #remaining_epochs = epochs - epoch
         current_epoch = epoch
         print('current epoch ' + str(current_epoch))
+    def on_epoch_end(self, epoch, logs=None):
+        open('epoch/' + job_name + '.txt', 'a').close()
 
 my_callback = PrintEpoch()
 
-class EpochEnd(keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        epoch_list = []
-        while True:
-            if os.path.exists('epoch.json'):
-                os.rename('epoch.json', 'epoch_lock.json')
-                break
-            else:
-                time.sleep(1)
-        with open('epoch_lock.json', 'r') as fp:
-            epoch_list = json.load(fp)
-        if job_name not in epoch_list:
-            epoch_list.append(job_name)
-        json_file2 = json.dumps(epoch_list)
-        with open('epoch_lock.json', 'w') as fp:
-            fp.write(json_file2)
-        os.rename('epoch_lock.json', 'epoch.json')
-
-callback2 = EpochEnd()
-
-callbacks = [tensorboard_callback, my_callback, callback2]
+callbacks = [tensorboard_callback, my_callback]
  #[checkpoint, lr_reducer, lr_scheduler, tensorboard_callback]
 
 # Run training

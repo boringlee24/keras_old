@@ -25,7 +25,7 @@ print('starting up on {} port {}'.format(*server_address))
 sock.bind(server_address)
 
 # Listen for incoming connections
-sock.listen(1)
+sock.listen(5)
 
 testcase = args.tc
 log_dir = '/scratch/li.baol/jobs_logs/' + testcase + '/' # this is dir for training progress

@@ -139,28 +139,18 @@ def max_power_promotion(K80_free, V100_free, V100_job, promote_list, force_demot
 def save_job(node, job): # save_job('c2176', '50')
     # first wait for the job to be qualified for checkpointing
     while True: # wait for ckpt_qual.json to be available
-        if os.path.exists('ckpt_qual.json'):
-            with open('ckpt_qual.json', 'r') as fp2:
-                ckpt_qual_dict = json.load(fp2)
-            if ckpt_qual_dict['job'+job] == 1:
-                if os.path.exists('ckpt_qual.json'): #if not locked. lock it and edit
-                    os.rename('ckpt_qual.json', 'ckpt_qual_lock.json') # lock
-                    with open('ckpt_qual_lock.json', 'r') as fp2:
-                        ckpt_qual_lock_dict = json.load(fp2)
-                    ckpt_qual_lock_dict['job'+job] = 0 # reset it
-                    json_file = json.dumps(ckpt_qual_lock_dict)
-                    with open('ckpt_qual_lock.json', 'w') as fp2:
-                        fp2.write(json_file)
-                    os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
-                    break
+        if os.path.exists('ckpt_qual/job' + job + '.txt'):
+            os.remove('ckpt_qual/job' + job + '.txt')
+            break
         time.sleep(5)
+
     # after passing the ready check, send signal to checkpoint
     send_signal(node, 'save ' + job)
 
     global ovhd_start
     global pc_job
-    if job not in pc_job:
-        ovhd_start[job] = time.time() 
+    #if job not in pc_job:
+    ovhd_start[job] = time.time() 
 
     # after sending checkpoint signal, wait for it to finish
     while True:
@@ -313,17 +303,19 @@ json_file = json.dumps(run_pid_dict)
 with open('run_pid.json', 'w') as fp:
     fp.write(json_file) 
 
-ckpt_qual_dict = {}
-with open('ckpt_qual.json', 'r') as fp:
-    ckpt_qual_dict = json.load(fp)
-for key in ckpt_qual_dict:
-    ckpt_qual_dict[key] = 0
-json_file = json.dumps(ckpt_qual_dict)
-with open('ckpt_qual.json', 'w') as fp:
-    fp.write(json_file) 
+# remove all files in ckpt_qual folder
+files = glob.glob('ckpt_qual/*')
+for f in files:
+    os.remove(f)
 
-#start_job(K80_node, '0', '39')
-#save_job(K80_node, '39')
+epoch_waste_dict = {}
+with open('epoch_waste.json', 'r') as fp:
+    epoch_waste_dict = json.load(fp)
+for key in epoch_waste_dict:
+    epoch_waste_dict[key] = 0
+json_file = json.dumps(epoch_waste_dict)
+with open('epoch_waste.json', 'w') as fp:
+    fp.write(json_file) 
 
 ######################################################################
 
@@ -349,12 +341,9 @@ while True:
                     kill_job(K80_node, job) 
             elif ovhd_start[job] != 0:
                 # check if ckpt overhead has finished
-                if os.path.exists('ckpt_qual.json'):
-                    with open('ckpt_qual.json', 'r') as fp2:
-                        ckpt_qual_dict = json.load(fp2)
-                    if ckpt_qual_dict['job'+job] == 1:
-                        overhead[job] += int(time.time() - ovhd_start[job])
-                        ovhd_start[job] = 0
+                if os.path.exists('/ckpt_qual/job' + job + '.txt'):
+                    overhead[job] += int(time.time() - ovhd_start[job])
+                    ovhd_start[job] = 0
 
     for gpu, job in V100_job.items():
         if job != 'idle':
@@ -365,12 +354,9 @@ while True:
                 JCT[job] = int(time.time() - job_start[job])
             elif ovhd_start[job] != 0:
                 # check if ckpt overhead has finished
-                if os.path.exists('ckpt_qual.json'):
-                    with open('ckpt_qual.json', 'r') as fp2:
-                        ckpt_qual_dict = json.load(fp2)
-                    if ckpt_qual_dict['job'+job] == 1:
-                        overhead[job] += int(time.time() - ovhd_start[job])
-                        ovhd_start[job] = 0
+                if os.path.exists('/ckpt_qual/job' + job + '.txt'):
+                    overhead[job] += int(time.time() - ovhd_start[job])
+                    ovhd_start[job] = 0
 
     ################ check for practical finished jobs on K80 and V100 ######################
 
@@ -425,8 +411,8 @@ while True:
             for gpu, job in V100_job.items():
                 if job == 'idle': # if gpu idle, schedule new job here
                     resume_job(V100_node, gpu, job_new)
-                    if job_new not in pc_job:
-                        num_mig[job_new] += 1
+                    #if job_new not in pc_job:
+                    num_mig[job_new] += 1
                     V100_job[gpu] = job_new
                     promoted.remove(job_new)
                     V100_used += 1
@@ -438,8 +424,8 @@ while True:
             for gpu, job in K80_job.items():
                 if job == 'idle': # if gpu idle, schedule new job here
                     resume_job(K80_node, gpu, job_new)
-                    if job_new not in pc_job:
-                        num_mig[job_new] += 1
+                    #if job_new not in pc_job:
+                    num_mig[job_new] += 1
                     K80_job[gpu] = job_new
                     demoted.remove(job_new)
                     K80_used += 1
@@ -495,11 +481,17 @@ PJCT['average'] = average_PJCT
 average_overhead = np.average(list(overhead.values()))
 overhead['average'] = average_overhead
 
+# after everything is finished
+with open('epoch_waste.json', 'r') as fp:
+    epoch_waste_dict = json.load(fp)
+
 print('finished all runs')
 JCT_name = testcase + '_JCT.json'
 PJCT_name = testcase + '_PJCT.json'
 overhead_name = testcase + '_overhead.json'
 num_mig_name = testcase + '_num_mig.json'
+epoch_waste_name = testcase + '_epoch_waste.json'
+
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
 with open(PJCT_name, 'w') as fp2:
@@ -508,5 +500,6 @@ with open(overhead_name, 'w') as fp3:
     json.dump(overhead, fp3, sort_keys=True, indent=4)
 with open(num_mig_name, 'w') as fp3:
     json.dump(num_mig, fp3, sort_keys=True, indent=4)
-
+with open(epoch_waste_name, 'w') as fp3:
+    json.dump(epoch_waste_dict, fp3, sort_keys=True, indent=4)
 
