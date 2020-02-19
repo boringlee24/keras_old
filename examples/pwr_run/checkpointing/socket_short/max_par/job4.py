@@ -29,11 +29,13 @@ import time
 import signal
 import glob
 import json
+import send_signal
 
 parser = argparse.ArgumentParser(description='Tensorflow Cifar10 Training')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='specific testcase name')
 parser.add_argument('--resume', dest='resume', action='store_true', help='if True, resume training from a checkpoint')
 parser.add_argument('--gpu_num', metavar='GPU_NUMBER', type=str, help='select which gpu to use')
+parser.add_argument('--node', metavar='HOST_NODE', type=str, help='node of the host (scheduler)')
 parser.set_defaults(resume=False)
 args = parser.parse_args()
 
@@ -144,7 +146,10 @@ current_epoch = 0
 def terminateProcess(signalNumber, frame):
     # first record the wasted epoch time
     global epoch_begin_time
-    epoch_waste_time = int(time.time() - epoch_begin_time)
+    if epoch_begin_time == 0:
+        epoch_waste_time = 0
+    else:
+        epoch_waste_time = int(time.time() - epoch_begin_time)
 
     epoch_waste_dict = {}
     with open('epoch_waste.json', 'r') as fp:
@@ -196,24 +201,13 @@ callbacks = [tensorboard_callback, my_callback]
 # Run training
 if not args.resume:
     trainable_count = int(np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
-    param_dict = {}
-    modify = False
-    with open('param_lock.json', 'r') as fp:
-        param_dict = json.load(fp)
-    if job_name not in param_dict:
-        param_dict[job_name] = trainable_count
-        modify = True
-    elif param_dict[job_name] != trainable_count:
-        param_dict[job_name] = trainable_count
-        modify = True
-    if modify:
-        json_file = json.dumps(param_dict)
-        with open('param_lock.json', 'w') as fp:
-            fp.write(json_file)
-    os.rename('param_lock.json', 'param.json')
+    # send signal 'jobxx param xxxxx'
+    message = job_name + ' param ' + str(trainable_count)
+    send_signal.send(args.node, 10002, message)
 
-# creates an file if job qualified for checkpoint
-open('ckpt_qual/' + job_name + '.txt', 'a').close()
+# send signal to indicate checkpoint is qualified
+message = job_name + ' ckpt_qual'
+send_signal.send(args.node, 10002, message)
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
@@ -230,20 +224,6 @@ scores = model.evaluate(x_test, y_test, verbose=1)
 print('Test loss:', scores[0])
 print('Test accuracy:', scores[1])
 
-finish_dict = {}
-while True:
-    if os.path.exists('finish.json'):
-        try:
-            os.rename('finish.json', 'finish_lock.json')
-            break
-        except Exception:
-            pass
-    else:
-        time.sleep(1)
-with open('finish_lock.json', 'r') as fp:
-    finish_dict = json.load(fp)
-finish_dict[job_name] = 1
-json_file2 = json.dumps(finish_dict)
-with open('finish_lock.json', 'w') as fp:
-    fp.write(json_file2)
-os.rename('finish_lock.json', 'finish.json')
+# send signal to indicate job has finished
+message = job_name + ' finish'
+send_signal.send(args.node, 10002, message)
