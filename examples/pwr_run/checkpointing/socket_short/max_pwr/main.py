@@ -63,9 +63,9 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2178'
-V100_node = 'd1001'
-host_node = 'c0168'
+K80_node = 'c2180'
+V100_node = 'd1020'
+host_node = 'c0200'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -334,10 +334,7 @@ def thread_function():
                 if data: 
                     data_str = data.decode('utf-8')
                     if 'param' in data_str:
-                        global param_dict
-                        job_name = data_str.split(' ')[0]
-                        param_num = int(data_str.split(' ')[2])
-                        param_dict[job_name] = param_num
+                        pass
                     elif 'ckpt_qual' in data_str:
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
@@ -378,7 +375,6 @@ while True:
                 # if the job is not qualified for promotion, kill its run.sh processes
                 if job not in qualified_job:
                     kill_job(K80_node, job)
-                #TODO
             elif ovhd_start[job] != 0:
                 # check if ckpt overhead has finished
                 if ckpt_qual_dict['job'+job] == 1:
@@ -405,10 +401,13 @@ while True:
 
     ################ check run time of current K80 job, update qualified_job #################
 
+    with open('power.json', 'r') as fp:
+        power_dict = json.load(fp)   
+
     for job in list(K80_job.values()):
         if job not in qualified_job and job != 'idle':
-            runtime = int(time.time() - job_start[job])
-            if runtime >= QUALIFY_TIME:
+            pwr_meas = power_dict['job'+job]
+            if pwr_meas > 0:
                 qualified_job.append(job)
                 print('job' + job + ' has been qualified for promotion')
 
@@ -422,7 +421,7 @@ while True:
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
 
     if len(promote_list) > 0:
-        promoted, demoted = max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
+        promoted, demoted = max_power_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
@@ -454,6 +453,7 @@ while True:
                         V100_used += 1
                         break
             else: # job has already finished before checkpointing
+                JCT[job_new] = int(time.time() - job_start[job_new])  
                 promoted.remove(job_new)
             
         # resume demoted jobs on K80, make sure the gpu is idle
@@ -469,6 +469,7 @@ while True:
                         K80_used += 1
                         break
             else: # job has already finished before checkpointing
+                JCT[job_new] = int(time.time() - job_start[job_new])  
                 demoted.remove(job_new)
 
         # perform a check, make sure all promoted/demoted jobs are scheduled
@@ -489,6 +490,7 @@ while True:
                 for gpu, job in K80_job.items():
                     if job == 'idle': # schedule new job here if idle
                         start_job(K80_node, gpu, job_new)
+                        measure_job(K80_node, gpu, job_new)
                         K80_job[gpu] = job_new
                         job_start[job_new] = time.time()
                         index += 1
@@ -499,6 +501,9 @@ while True:
     ############### wait for next iteration
 
     time.sleep(INTERVAL)
+    #TODO
+    if int(time.time() - queue_timer) > 32400:
+        pdb.set_trace()
 
     ################ check if termination condition is met ################
 

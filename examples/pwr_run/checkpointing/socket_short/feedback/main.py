@@ -479,6 +479,7 @@ while True:
                         V100_used += 1
                         break
             else: # job has already finished before checkpointing
+                JCT[job_new] = int(time.time() - job_start[job_new])  
                 promoted.remove(job_new)
             
         # resume demoted jobs on K80, make sure the gpu is idle
@@ -494,6 +495,7 @@ while True:
                         K80_used += 1
                         break
             else: # job has already finished before checkpointing
+                JCT[job_new] = int(time.time() - job_start[job_new])  
                 demoted.remove(job_new)
 
         # perform a check, make sure all promoted/demoted jobs are scheduled

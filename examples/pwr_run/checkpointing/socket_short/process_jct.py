@@ -2,9 +2,9 @@ import glob
 import json
 import pdb
 
-testcase = 'min_par'
-JCT_log = './min_par/logs/' + testcase + '_JCT.json'
-PJCT_log = './min_par/logs/' + testcase + '_PJCT.json'
+testcase = 'feedback'
+JCT_log = './feedback/logs/' + testcase + '_JCT.json'
+PJCT_log = './feedback/logs/' + testcase + '_PJCT.json'
 
 JCT = {}
 PJCT = {}
@@ -22,9 +22,9 @@ for job in JCT:
             time.append(JCT[job])
 
 # make sure all jobs are recorded
-if len(time) != 50:
-    print('Error. Not all jobs recorded')
-else:
-    avg = sum(time) / len(time)
-    print(str(avg))
+##if len(time) != 50:
+##    print('Error. Not all jobs recorded')
+##else:
+avg = sum(time) / len(time)
+print(str(avg))
         
