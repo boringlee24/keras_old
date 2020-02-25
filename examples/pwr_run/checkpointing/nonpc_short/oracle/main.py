@@ -68,8 +68,8 @@ qualified_job = []
 pc_job = []
 
 K80_node = 'c2180'
-V100_node = 'd1020'
-host_node = 'c0176'
+V100_node = 'd1006'
+host_node = 'c0179'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -398,9 +398,7 @@ while True:
                 if job == job_new: # if gpu idle, schedule new job here
                     start_job(K80_node, gpu, job_new)
                     job_start[job_new] = time.time()
-                    K80_job[gpu] = job_new
                     new_pool.remove(job_new)
-                    K80_used += 1
                     break
 
         # resume demoted jobs on K80, make sure the gpu is idle
@@ -420,8 +418,7 @@ while True:
 
         # perform a check, make sure all promoted/demoted jobs are scheduled
         if len(promoted) > 0 or len(demoted) > 0 or len(new_pool) > 0:
-            pdb.set_trace()
-#            raise ValueError('Bug with promotion scheme, more jobs than free gpus')
+            raise ValueError('Bug with promotion scheme, more jobs than free gpus')
 
     ############### wait for next iteration
 
