@@ -64,7 +64,7 @@ epoch_end_job = []
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0193'
+host_node = 'c0175'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 

@@ -50,7 +50,6 @@ K80_cap = 8
 V100_cap = 4
 K80_used = 0
 V100_used = 0
-qualified_jobs = 0
 
 K80_job = {}
 for i in range(8):

@@ -57,7 +57,7 @@ qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
 V100_node = 'd1020'
-host_node = 'c0182'
+host_node = 'c0175'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -67,7 +67,7 @@ QUALIFY_TIME = 300 # 600s or 10min as threshold
 def send_signal(node, cmd):
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    port = 10000 if node == V100_node else 10001 
+    port = 10001 if node == V100_node else 10001 
     # Connect the socket to the port where the server is listening
     server_address = (node, int(port))
 

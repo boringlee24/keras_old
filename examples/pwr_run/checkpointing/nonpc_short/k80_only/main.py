@@ -57,7 +57,7 @@ qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
 K80_node = 'c2180'
-host_node = 'c0182'
+host_node = 'c0173'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
