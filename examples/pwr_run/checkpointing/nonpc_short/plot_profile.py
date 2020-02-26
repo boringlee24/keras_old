@@ -5,22 +5,22 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-testcase = 'v100_only'
-JCT_log = './v100_only/logs/' + testcase + '_JCT.json'
+testcase = 'oracle'
+JCT_log = './oracle/logs/' + testcase + '_JCT.json'
 
 JCT = {}
 with open(JCT_log, 'r') as fp:
     JCT = json.load(fp)
 
-v100_only_time = []
+oracle_time = []
 for i in range(50):
     job = str(i+1)
-    v100_only_time.append(JCT[job])
+    oracle_time.append(JCT[job])
 
-v100_only_time = np.array(v100_only_time, dtype=np.float)
+oracle_time = np.array(oracle_time, dtype=np.float)
 
-overhead_log = './v100_only/logs/' + testcase + '_overhead.json'
-epoch_waste_log = './v100_only/logs/' + testcase + '_epoch_waste.json'
+overhead_log = './oracle/logs/' + testcase + '_overhead.json'
+epoch_waste_log = './oracle/logs/' + testcase + '_epoch_waste.json'
 
 overhead = {}
 epoch_waste = {}
@@ -33,32 +33,32 @@ overhead_time = []
 for i in range(50):
     job = str(i+1)
     overhead_time.append(overhead[job])
-v100_only_overhead = np.array(overhead_time, dtype=np.float)
+oracle_overhead = np.array(overhead_time, dtype=np.float)
 
 epoch_waste_time = []
 for i in range(50):
     job = 'job' + str(i+1)
     epoch_waste_time.append(epoch_waste[job])
-v100_only_epoch_waste = np.array(epoch_waste_time, dtype=np.float)
+oracle_epoch_waste = np.array(epoch_waste_time, dtype=np.float)
 
-v100_only_running = v100_only_time - v100_only_overhead - v100_only_epoch_waste
-#v100_only_overhead = v100_only_overhead / v100_only_time * 100
-avg = np.average(v100_only_overhead)
+oracle_running = oracle_time - oracle_overhead - oracle_epoch_waste
+#oracle_overhead = oracle_overhead / oracle_time * 100
+avg = np.average(oracle_overhead)
 print(f'average overhead {avg}s')
-#v100_only_epoch_waste = v100_only_epoch_waste / v100_only_time * 100
-avg = np.average(v100_only_epoch_waste)
+#oracle_epoch_waste = oracle_epoch_waste / oracle_time * 100
+avg = np.average(oracle_epoch_waste)
 print(f'average epoch_waste {avg}s')
-#v100_only_running = v100_only_running / v100_only_time * 100
-avg = np.average(v100_only_running)
+#oracle_running = oracle_running / oracle_time * 100
+avg = np.average(oracle_running)
 print(f'average running {avg}s')
 
-x = np.arange(len(v100_only_time)) + 1  # the label locations
+x = np.arange(len(oracle_time)) + 1  # the label locations
 width = 0.4  # the width of the bars
 
 fig, ax = plt.subplots(figsize=(12,5))
-rects1 = ax.bar(x, v100_only_overhead, width, label='mechanical overhead time')
-rects2 = ax.bar(x, v100_only_epoch_waste, width, label='epoch waste time', bottom=v100_only_overhead)
-rects3 = ax.bar(x, v100_only_running, width, label='running time', bottom=v100_only_epoch_waste+v100_only_overhead)
+rects1 = ax.bar(x, oracle_overhead, width, label='mechanical overhead time')
+rects2 = ax.bar(x, oracle_epoch_waste, width, label='epoch waste time', bottom=oracle_overhead)
+rects3 = ax.bar(x, oracle_running, width, label='running time', bottom=oracle_epoch_waste+oracle_overhead)
 
 ax.set_ylabel('JCT(%)')
 ax.set_xlabel('job')
