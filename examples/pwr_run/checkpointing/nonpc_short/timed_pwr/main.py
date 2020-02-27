@@ -312,6 +312,7 @@ def thread_function():
                         finish_dict[job_name] = 1
                     elif 'epoch_end' in data_str:
                         global epoch_end_job
+                        job_name = data_str.split(' ')[0]
                         if job_name not in epoch_end_job:
                             epoch_end_job.append(job_name)
                             print(epoch_end_job)

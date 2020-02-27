@@ -70,8 +70,8 @@ pc_job = []
 epoch_end_job = []
 
 K80_node = 'c2180'
-V100_node = 'd1020'
-host_node = 'c0175'
+V100_node = 'd1006'
+host_node = 'c0179'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -341,6 +341,7 @@ def thread_function():
                         finish_dict[job_name] = 1
                     elif 'epoch_end' in data_str:
                         global epoch_end_job
+                        job_name = data_str.split(' ')[0]
                         if job_name not in epoch_end_job:
                             epoch_end_job.append(job_name)
                             print(epoch_end_job)
