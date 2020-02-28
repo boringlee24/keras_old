@@ -28,6 +28,11 @@ for item in queue:
     queue_dict[item] = arrival_time
 queue_timer = time.time()
 
+#TODO
+# 1. profile ovhd_profile for each job, it's collected only once for first time promotion jobs
+# 2. account for profiled overhead in transaction (no promotion to idle). Need overhead for both jobs. Time save
+# (speedup_diff * expected execution time (formula in notebook) minus theoverhead of both jobs. think about this 
+
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
 overhead = {} # initialize so that every job starts with 0s overhead time
@@ -36,6 +41,9 @@ for item in queue:
 ovhd_start = {} # initialize this to 0 as well
 for item in queue:
     ovhd_start[str(item)] = 0
+ovhd_profile = {} # initialize this to 0 as well
+for item in queue:
+    ovhd_profile[str(item)] = 0
 num_mig = {} # initialize migration time to 0
 for item in queue:
     num_mig[str(item)] = 0
@@ -99,6 +107,9 @@ r_sq = model.score(x, y)
 print('coefficient of determination:', r_sq)
 ####################################################################
 
+######################## function to estimate remaining V100 job time #####################
+
+
 def send_signal(node, cmd):
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -146,11 +157,24 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_dem
             for job in V100_pool:
                 if job in speedup_dict:
                     pool_dict[job] = speedup_dict[job]        
-            sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:4] 
+            sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:4]
+
             promotion_list = list(set(promote_list).intersection(sorted_pool))                     
             demotion_list = list(set(list(V100_job.values())).difference(sorted_pool))
             if 'idle' in demotion_list:
                 demotion_list.remove('idle') # this includes force demotion
+
+            # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
+            # K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.1, replace the K80 job
+            # in sorted pool
+            for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
+                if job_demote in demotion_list:
+                    for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
+                        if job_promote in promotion_list:
+                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.1:
+                                demotion_list.remove(job_demote)
+                                promotion_list.remove(job_promote)
+                                break
             return promotion_list, demotion_list
     elif V100_vacant >= num_promote: # if more vacant V100s than promote jobs, always promote
         # less vacant K80s than demote jobs, select worst among force demote list
@@ -158,7 +182,9 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_dem
         for job in force_demote:
              if job in speedup_dict:
                 pool_dict[job] = speedup_dict[job]
-        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:K80_vacant] 
+        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:K80_vacant]
+        if len(sorted_pool) > 0:
+            raise ValueError('Bug, demotion shouldnt happen because no practical complete')           
         return promote_list, sorted_pool
     else:
         raise ValueError('Bug with max speedup promotion, condition not considered')
@@ -430,7 +456,9 @@ while True:
                 # check if ckpt overhead has finished
                 if ckpt_qual_dict['job'+job] == 1:
                     overhead[job] += int(time.time() - ovhd_start[job])
-                    ovhd_start[job] = 0                   
+                    ovhd_start[job] = 0                  
+                    if ovhd_profile[job] == 0:
+                        ovhd_profile[job] = int(time.time() - ovhd_start[job])
 
     ################ check run time of current K80 job, update qualified_job #################
 
@@ -565,6 +593,7 @@ with open('epoch_waste.json', 'r') as fp:
 print('finished all runs')
 JCT_name = testcase + '_JCT.json'
 overhead_name = testcase + '_overhead.json'
+ovhd_profile_name = testcase + '_overhead.json'
 num_mig_name = testcase + '_num_mig.json'
 epoch_waste_name = testcase + '_epoch_waste.json'
 ckpt_qual_name = 'ckpt_qual.json'
@@ -575,6 +604,8 @@ with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
 with open(overhead_name, 'w') as fp3:
     json.dump(overhead, fp3, sort_keys=True, indent=4)
+with open(ovhd_profile_name, 'w') as fp3:
+    json.dump(ovhd_profile, fp3, sort_keys=True, indent=4)
 with open(num_mig_name, 'w') as fp3:
     json.dump(num_mig, fp3, sort_keys=True, indent=4)
 with open(epoch_waste_name, 'w') as fp3:
