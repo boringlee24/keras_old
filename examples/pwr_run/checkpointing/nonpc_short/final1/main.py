@@ -380,7 +380,6 @@ def thread_function():
                         # move overhead profiling here
                         global ovhd_start
                         global overhead
-                        global V100_job
                         job = job_name.replace('job','')
                         if ovhd_start[job] != 0:
                             if ckpt_qual_dict[job_name] == 1:
@@ -436,8 +435,13 @@ while True:
     check_step1_complete(list(K80_job.values()))
     check_step2_complete(list(V100_job.values()))   
 
-    with open('power.json', 'r') as fp:
-        power_dict = json.load(fp)   
+    while True:
+        if os.path.exists('power.json'):
+            with open('power.json', 'r') as fp:
+                power_dict = json.load(fp)  
+            break
+        else:
+            time.sleep(1)
 
     for job in list(K80_job.values()):
         if job not in qualified_job and job != 'idle':

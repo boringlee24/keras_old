@@ -81,7 +81,7 @@ pc_job = []
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0180'
+host_node = 'c0168'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -165,13 +165,13 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_dem
                 demotion_list.remove('idle') # this includes force demotion
 
             # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
-            # K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.1, replace the K80 job
+            # K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.2, replace the K80 job
             # in sorted pool
             for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
                 if job_demote in demotion_list:
                     for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                         if job_promote in promotion_list:
-                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.1:
+                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.2:
                                 demotion_list.remove(job_demote)
                                 promotion_list.remove(job_promote)
                                 break
@@ -466,8 +466,13 @@ while True:
     check_step1_complete(list(K80_job.values()))
     check_step2_complete(list(V100_job.values()))   
 
-    with open('power.json', 'r') as fp:
-        power_dict = json.load(fp)   
+    while True:
+        if os.path.exists('power.json'):
+            with open('power.json', 'r') as fp:
+                power_dict = json.load(fp)  
+            break
+        else:
+            time.sleep(1)
 
     for job in list(K80_job.values()):
         if job not in qualified_job and job != 'idle':
@@ -516,9 +521,9 @@ while True:
             if finish_dict['job'+job_new] != 1:
                 for gpu, job in V100_job.items():
                     if job == 'idle': # if gpu idle, schedule new job here
+                        V100_job[gpu] = job_new
                         resume_job(V100_node, gpu, job_new)
                         num_mig[job_new] += 1
-                        V100_job[gpu] = job_new
                         promoted.remove(job_new)
                         V100_used += 1
                         break
@@ -570,6 +575,8 @@ while True:
     ############### wait for next iteration
 
     time.sleep(INTERVAL)
+    if int(time.time() - queue_timer) > 25200:
+        pdb.set_trace()
 
     ################ check if termination condition is met ################
 

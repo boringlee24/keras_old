@@ -296,6 +296,15 @@ def thread_function():
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
                         ckpt_qual_dict[job_name] = 1
+                        # move overhead profiling here
+                        global ovhd_start
+                        global overhead
+                        global V100_job
+                        job = job_name.replace('job','')
+                        if ovhd_start[job] != 0:
+                            if ckpt_qual_dict[job_name] == 1:
+                                overhead[job] += int(time.time() - ovhd_start[job])
+                                ovhd_start[job] = 0                   
                     elif 'finish' in data_str:
                         global finish_dict
                         job_name = data_str.split(' ')[0]
@@ -332,11 +341,6 @@ while True:
                 # if the job is not qualified for promotion, kill its run.sh processes
                 if job not in qualified_job:
                     kill_job(K80_node, job)
-            elif ovhd_start[job] != 0:
-                # check if ckpt overhead has finished
-                if ckpt_qual_dict['job'+job] == 1:
-                    overhead[job] += int(time.time() - ovhd_start[job])
-                    ovhd_start[job] = 0                   
 
     for gpu, job in V100_job.items():
         if job != 'idle':
@@ -345,16 +349,16 @@ while True:
                 V100_job[gpu] = 'idle'
                 print('V100 finished job: ' + job)
                 JCT[job] = int(time.time() - job_start[job])
-            elif ovhd_start[job] != 0:
-                # check if ckpt overhead has finished
-                if ckpt_qual_dict['job'+job] == 1:
-                    overhead[job] += int(time.time() - ovhd_start[job])
-                    ovhd_start[job] = 0                   
 
     ################ check run time of current K80 job, update qualified_job #################
 
-    with open('power.json', 'r') as fp:
-        power_dict = json.load(fp)   
+    while True:
+        if os.path.exists('power.json'):
+            with open('power.json', 'r') as fp:
+                power_dict = json.load(fp)  
+            break
+        else:
+            time.sleep(1)
 
     for job in list(K80_job.values()):
         if job not in qualified_job and job != 'idle':

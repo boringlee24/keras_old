@@ -327,6 +327,15 @@ def thread_function():
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
                         ckpt_qual_dict[job_name] = 1
+                        # move overhead profiling here
+                        global ovhd_start
+                        global overhead
+                        global V100_job
+                        job = job_name.replace('job','')
+                        if ovhd_start[job] != 0:
+                            if ckpt_qual_dict[job_name] == 1:
+                                overhead[job] += int(time.time() - ovhd_start[job])
+                                ovhd_start[job] = 0                   
                     elif 'finish' in data_str:
                         global finish_dict
                         job_name = data_str.split(' ')[0]
@@ -360,11 +369,6 @@ while True:
                 K80_job[gpu] = 'idle'
                 print('K80 finished job: ' + job)
                 JCT[job] = int(time.time() - job_start[job])  
-            elif ovhd_start[job] != 0:
-                # check if ckpt overhead has finished
-                if ckpt_qual_dict['job'+job] == 1:
-                    overhead[job] += int(time.time() - ovhd_start[job])
-                    ovhd_start[job] = 0                   
 
     for gpu, job in V100_job.items():
         if job != 'idle':
@@ -373,11 +377,6 @@ while True:
                 V100_job[gpu] = 'idle'
                 print('V100 finished job: ' + job)
                 JCT[job] = int(time.time() - job_start[job])
-            elif ovhd_start[job] != 0:
-                # check if ckpt overhead has finished
-                if ckpt_qual_dict['job'+job] == 1:
-                    overhead[job] += int(time.time() - ovhd_start[job])
-                    ovhd_start[job] = 0                   
 
     ################ check step1 finished job of K80 jobs and step 2 of V100 #################
 
