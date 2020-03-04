@@ -173,6 +173,21 @@ my_callback = PrintEpoch()
 callbacks = [tensorboard_callback, my_callback]
  #[checkpoint, lr_reducer, lr_scheduler, tensorboard_callback]
 
+ckpt_qual_dict = {}
+while True:
+    if os.path.exists('ckpt_qual.json'):
+        os.rename('ckpt_qual.json', 'ckpt_qual_lock.json')
+        break
+    else:
+        time.sleep(1)
+with open('ckpt_qual_lock.json', 'r') as fp:
+    ckpt_qual_dict = json.load(fp)
+ckpt_qual_dict[job_name] = 1
+json_file2 = json.dumps(ckpt_qual_dict)
+with open('ckpt_qual_lock.json', 'w') as fp:
+    fp.write(json_file2)
+os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
+
 # Run training
 model.fit(x_train, y_train,
           batch_size=batch_size,

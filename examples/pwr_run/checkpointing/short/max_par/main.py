@@ -59,7 +59,7 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2181'
+K80_node = 'c2180'
 V100_node = 'd1020'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###

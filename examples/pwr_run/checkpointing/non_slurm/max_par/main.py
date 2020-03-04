@@ -116,6 +116,24 @@ def max_param_promotion(K80_free, V100_free, V100_job, promote_list, force_demot
 #e, f = max_param_promotion(1, 1, {'0': '49', '1': '39', '2': '50', '3': 'idle'}, ['40', '37'], []) 
 
 def save_job(node, job): # save_job('c2176', '50')
+    # first wait for the job to be qualified for checkpointing
+    while True: # wait for ckpt_qual.json to be available
+        if os.path.exists('ckpt_qual.json'):
+            with open('ckpt_qual.json', 'r') as fp2:
+                ckpt_qual_dict = json.load(fp2)
+            if ckpt_qual_dict['job'+job] == 1:
+                if os.path.exists('ckpt_qual.json'): #if not locked. lock it and edit
+                    os.rename('ckpt_qual.json', 'ckpt_qual_lock.json') # lock
+                    with open('ckpt_qual_lock.json', 'r') as fp2:
+                        ckpt_qual_lock_dict = json.load(fp2)
+                    ckpt_qual_lock_dict['job'+job] = 0 # reset it
+                    json_file = json.dumps(ckpt_qual_lock_dict)
+                    with open('ckpt_qual_lock.json', 'w') as fp2:
+                        fp2.write(json_file)
+                    os.rename('ckpt_qual_lock.json', 'ckpt_qual.json')
+                    break
+        time.sleep(5)
+
     send_signal(node, 'save ' + job)
     # after sending checkpoint signal, wait for it to finish 
     while True:
@@ -263,6 +281,15 @@ for key in param_dict:
     param_dict[key] = 0
 json_file = json.dumps(param_dict)
 with open('param.json', 'w') as fp:
+    fp.write(json_file) 
+
+ckpt_qual_dict = {}
+with open('ckpt_qual.json', 'r') as fp:
+    ckpt_qual_dict = json.load(fp)
+for key in ckpt_qual_dict:
+    ckpt_qual_dict[key] = 0
+json_file = json.dumps(ckpt_qual_dict)
+with open('ckpt_qual.json', 'w') as fp:
     fp.write(json_file) 
 
 ######################################################################

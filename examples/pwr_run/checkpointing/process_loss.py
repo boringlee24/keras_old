@@ -20,10 +20,11 @@ import random
 
 job = 'job50'
 
-base_dir = '/scratch/li.baol/tsrbrd_log/job_runs/random_pratical_finish/'
+base_dir = '/scratch/li.baol/tsrbrd_log/job_runs/archive/random_practical_finish_1/'
 log_dir = base_dir + job + '/*'
 dirs = glob.glob(log_dir)
 dirs.sort()
+pdb.set_trace()
 
 loss_combine = []
 
@@ -35,6 +36,7 @@ for tc in dirs:
     loss = [item.value for item in iterator.Scalars(tag)]
     loss_combine += loss
     wall_time = [t.wall_time for t in iterator.Scalars(tag)]
+    pdb.set_trace()
     relative_time = [(time - wall_time[0])/3600 for time in wall_time]
 
 

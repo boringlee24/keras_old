@@ -2,9 +2,9 @@ import glob
 import json
 import pdb
 
-testcase = 'random2'
-JCT_log = './random2/logs/' + testcase + '_JCT.json'
-PJCT_log = './random2/logs/' + testcase + '_PJCT.json'
+testcase = 'max_par'
+JCT_log = './max_par/logs/' + testcase + '_JCT.json'
+PJCT_log = './max_par/logs/' + testcase + '_PJCT.json'
 
 JCT = {}
 PJCT = {}

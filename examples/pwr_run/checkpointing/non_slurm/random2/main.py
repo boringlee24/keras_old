@@ -222,6 +222,15 @@ json_file = json.dumps(checkpoint_dict)
 with open('checkpoint.json', 'w') as fp:
     fp.write(json_file) 
 
+ckpt_qual_dict = {}
+with open('ckpt_qual.json', 'r') as fp:
+    ckpt_qual_dict = json.load(fp)
+for key in ckpt_qual_dict:
+    ckpt_qual_dict[key] = 0
+json_file = json.dumps(ckpt_qual_dict)
+with open('ckpt_qual.json', 'w') as fp:
+    fp.write(json_file) 
+
 ######################################################################
 
 while True:

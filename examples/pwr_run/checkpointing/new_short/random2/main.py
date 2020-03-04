@@ -30,6 +30,7 @@ queue_timer = time.time()
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
 PJCT = {} # practical complete time, not applicable for all jobs
+PJCT_epoch = {}
 overhead = {} # initialize so that every job starts with 0s overhead time
 for item in queue:
     overhead[str(item)] = 0
@@ -198,9 +199,10 @@ def start_job(node, gpu, job):
 # criteria for practical complete: loss improvement has been smaller than 0.01 for last 3 consecutive epochs
 def check_practical_complete(job_list):
     log_path = '/scratch/li.baol/tsrbrd_log/job_runs/' + testcase + '/'
-    threshold = 0.01
+    threshold = 0.001
     global pc_job
     global PJCT
+    global PJCT_epoch
     for job in job_list:
         # only check for job outside of practical complete job list
         if job not in pc_job and job != 'idle':
@@ -230,6 +232,7 @@ def check_practical_complete(job_list):
                     print(str(latest_loss))
                     pc_job.append(job)                                            
                     PJCT[job] = int(time.time() - job_start[job])
+                    PJCT_epoch[job] = len(loss_combine)
            
 
 ############### first clear finish status of all jobs ####################
@@ -476,6 +479,7 @@ with open('epoch_waste.json', 'r') as fp:
 print('finished all runs')
 JCT_name = testcase + '_JCT.json'
 PJCT_name = testcase + '_PJCT.json'
+PJCT_epoch_name = testcase + '_PJCT_epoch.json'
 overhead_name = testcase + '_overhead.json'
 num_mig_name = testcase + '_num_mig.json'
 epoch_waste_name = testcase + '_epoch_waste.json'
@@ -486,6 +490,8 @@ with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
 with open(PJCT_name, 'w') as fp2:
     json.dump(PJCT, fp2, sort_keys=True, indent=4)
+with open(PJCT_epoch_name, 'w') as fp2:
+    json.dump(PJCT_epoch, fp2, sort_keys=True, indent=4)
 with open(overhead_name, 'w') as fp3:
     json.dump(overhead, fp3, sort_keys=True, indent=4)
 with open(num_mig_name, 'w') as fp3:

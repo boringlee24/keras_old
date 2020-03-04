@@ -32,8 +32,12 @@ import json
 parser = argparse.ArgumentParser(description='Tensorflow Cifar10 Training')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='specific testcase name')
 parser.add_argument('--resume', dest='resume', action='store_true', help='if True, resume training from a checkpoint')
+parser.add_argument('--gpu_num', metavar='GPU_NUMBER', type=str, help='select which gpu to use')
 parser.set_defaults(resume=False)
 args = parser.parse_args()
+
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_num
 
 # Training parameters
 batch_size = 32

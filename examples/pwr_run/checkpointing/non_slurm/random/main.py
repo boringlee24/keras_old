@@ -19,6 +19,15 @@ queue = [49, 15, 50, 39, 14, 40, 13, 37, 32, 44, 1, 25, 6, 12, 43, 35, 29, 7, 46
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
 PJCT = {} # practical complete time, not applicable for all jobs
+overhead = {} # initialize so that every job starts with 0s overhead time
+for item in queue:
+    overhead[str(item)] = 0
+ovhd_start = {} # initialize this to 0 as well
+for item in queue:
+    ovhd_start[str(item)] = 0
+num_mig = {} # initialize migration time to 0
+for item in queue:
+    num_mig[str(item)] = 0
 index = 0
 
 K80_cap = 8
@@ -37,8 +46,8 @@ all_job = []
 qualified_job = []
 pc_job = [] # list of jobs that are pratically completed
 
-K80_node = 'c2179'
-V100_node = 'd1004'
+K80_node = 'c2180'
+V100_node = 'd1021'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -96,6 +105,12 @@ def random_promotion(K80_free, V100_free, promote_list, force_demote):
 
 def save_job(node, job): # save_job('c2176', '50')
     send_signal(node, 'save ' + job)
+
+    global ovhd_start
+    global pc_job
+    if job not in pc_job:
+        ovhd_start[job] = time.time() 
+
     # after sending checkpoint signal, wait for it to finish 
     while True:
         time.sleep(5)
@@ -191,7 +206,7 @@ def check_practical_complete(job_list):
                     print(str(latest_loss))
                     pc_job.append(job)                                            
                     PJCT[job] = int(time.time() - job_start[job])
-           
+          
 
 ############### first clear finish status of all jobs ####################
 
@@ -222,6 +237,15 @@ json_file = json.dumps(checkpoint_dict)
 with open('checkpoint.json', 'w') as fp:
     fp.write(json_file) 
 
+ckpt_qual_dict = {}
+with open('ckpt_qual.json', 'r') as fp:
+    ckpt_qual_dict = json.load(fp)
+for key in ckpt_qual_dict:
+    ckpt_qual_dict[key] = 0
+json_file = json.dumps(ckpt_qual_dict)
+with open('ckpt_qual.json', 'w') as fp:
+    fp.write(json_file) 
+
 ######################################################################
 
 while True:
@@ -230,6 +254,7 @@ while True:
     # all the jobs have finished
 
     ################### check for finished jobs on K80 and V100 ##############################
+    ################## newly added: also check for checkpointing overhead time ###############
 
     with open('finish.json', 'r') as fp:
         finish_dict = json.load(fp)
@@ -240,8 +265,16 @@ while True:
                 K80_used -= 1            
                 K80_job[gpu] = 'idle'
                 print('K80 finished job: ' + job)
-                JCT[job] = int(time.time() - job_start[job])   
-
+                JCT[job] = int(time.time() - job_start[job])
+            elif ovhd_start[job] != 0:
+                # check if ckpt overhead has finished
+                if os.path.exists('ckpt_qual.json'):
+                    with open('ckpt_qual.json', 'r') as fp2:
+                        ckpt_qual_dict = json.load(fp2)
+                    if ckpt_qual_dict['job'+job] == 1:
+                        overhead[job] += int(time.time() - ovhd_start[job])
+                        ovhd_start[job] = 0
+                        
     for gpu, job in V100_job.items():
         if job != 'idle':
             if finish_dict['job'+job] == 1:
@@ -249,6 +282,14 @@ while True:
                 V100_job[gpu] = 'idle'
                 print('V100 finished job: ' + job)
                 JCT[job] = int(time.time() - job_start[job])
+            elif ovhd_start[job] != 0:
+                # check if ckpt overhead has finished
+                if os.path.exists('ckpt_qual.json'):
+                    with open('ckpt_qual.json', 'r') as fp2:
+                        ckpt_qual_dict = json.load(fp2)
+                    if ckpt_qual_dict['job'+job] == 1:
+                        overhead[job] += int(time.time() - ovhd_start[job])
+                        ovhd_start[job] = 0
 
     ################ check for practical finished jobs on K80 and V100 ######################
 
@@ -281,7 +322,7 @@ while True:
             print('demoted jobs: ', demoted)
         # stop all promoted jobs on K80
         for gpu, job in K80_job.items():
-            if job in promoted:
+            if job in promoted: 
                 save_job(K80_node, job)
                 K80_job[gpu] = 'idle'
                 K80_used -= 1
@@ -300,6 +341,8 @@ while True:
             for gpu, job in V100_job.items():
                 if job == 'idle': # if gpu idle, schedule new job here
                     resume_job(V100_node, gpu, job_new)
+                    if job not in pc_job:
+                        num_mig[job] += 1
                     V100_job[gpu] = job_new
                     promoted.remove(job_new)
                     V100_used += 1
@@ -311,6 +354,8 @@ while True:
             for gpu, job in K80_job.items():
                 if job == 'idle': # if gpu idle, schedule new job here
                     resume_job(K80_node, gpu, job_new)
+                    if job not in pc_job:
+                        num_mig[job] += 1
                     K80_job[gpu] = job_new
                     demoted.remove(job_new)
                     K80_used += 1
@@ -361,14 +406,20 @@ JCT['average'] = average_JCT
 average_PJCT = np.average(list(PJCT.values()))
 PJCT['average'] = average_PJCT
 
+average_overhead = np.average(list(overhead.values()))
+overhead['average'] = average_overhead
+
 print('finished all runs')
 JCT_name = testcase + '_JCT.json'
 PJCT_name = testcase + '_PJCT.json'
+overhead_name = testcase + '_overhead.json'
+num_mig_name = testcase + '_num_mig.json'
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
 with open(PJCT_name, 'w') as fp2:
     json.dump(PJCT, fp2, sort_keys=True, indent=4)
-
-
-
+with open(overhead_name, 'w') as fp3:
+    json.dump(overhead, fp3, sort_keys=True, indent=4)
+with open(num_mig_name, 'w') as fp3:
+    json.dump(num_mig, fp3, sort_keys=True, indent=4)
 
