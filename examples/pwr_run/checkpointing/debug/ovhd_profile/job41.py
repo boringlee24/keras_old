@@ -15,7 +15,7 @@ from keras.regularizers import l2
 from keras import backend as K
 from keras.models import Model
 from keras.datasets import cifar10
-from keras.applications.nasnet import NASNetMobile
+from keras.applications.resnet import ResNet50, ResNet101, ResNet152
 from keras import models, layers, optimizers
 from datetime import datetime
 import tensorflow as tf
@@ -42,22 +42,17 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_num
 
 # Training parameters
-batch_size = 64
-args_lr = 0.002
-args_model = 'mnasnet'
+batch_size = 32
+args_lr = 0.0007
+args_model = 'resnet50'
 
 epoch_begin_time = 0
 
 job_name = sys.argv[0].split('.')[0]
-save_files = '/scratch/li.baol/checkpoint_oracle/' + job_name + '*'
+save_files = '/scratch/li.baol/checkpoint_test/' + job_name + '*'
 
-total_epochs = 143
+total_epochs = 68
 starting_epoch = 0
-
-# first step is to update the PID
-pid = os.getpid()
-message = job_name + ' pid ' + str(pid) # 'job50 pid 3333'
-send_signal.send(args.node, 10002, message)
 
 if args.resume:
     save_file = glob.glob(save_files)[0]
@@ -104,12 +99,20 @@ else:
     print('train from start')
     model = models.Sequential()
     
-    base_model = NASNetMobile(weights=None, include_top=False, input_shape=(32, 32, 3), pooling=None)
+    if '50' in args_model:
+        base_model = ResNet50(weights=None, include_top=False, input_shape=(32, 32, 3), pooling=None)
+    elif '101' in args_model:
+        base_model = ResNet101(weights=None, include_top=False, input_shape=(32, 32, 3), pooling=None)
+    elif '152' in args_model:
+        base_model = ResNet152(weights=None, include_top=False, input_shape=(32, 32, 3), pooling=None)
     
     #base_model.summary()
     
     #pdb.set_trace()
     
+    #model.add(layers.UpSampling2D((2,2)))
+    #model.add(layers.UpSampling2D((2,2)))
+    #model.add(layers.UpSampling2D((2,2)))
     model.add(base_model)
     model.add(layers.Flatten())
     #model.add(layers.BatchNormalization())
@@ -119,7 +122,7 @@ else:
     #model.add(layers.Dense(64, activation='relu'))
     #model.add(layers.Dropout(0.5))
     #model.add(layers.BatchNormalization())
-    model.add(layers.Dense(10, activation='softmax'))
+    model.add(layers.Dense(10, activation='softmax'))#, kernel_initializer='he_uniform'))
     
     model.compile(loss='categorical_crossentropy',
                   optimizer=Adam(lr=args_lr),
@@ -134,7 +137,7 @@ current_epoch = 0
 
 ################### connects interrupt signal to the process #####################
 
-def terminateProcess(signalNumber, frame):
+def terminateProcess():
     # first record the wasted epoch time
     global epoch_begin_time
     if epoch_begin_time == 0:
@@ -142,19 +145,12 @@ def terminateProcess(signalNumber, frame):
     else:
         epoch_waste_time = int(time.time() - epoch_begin_time)
 
-    message = job_name + ' waste ' + str(epoch_waste_time) # 'job50 waste 100'
-    if epoch_waste_time > 0:
-        send_signal.send(args.node, 10002, message)
-
     print('checkpointing the model triggered by kill -15 signal')
     # delete whatever checkpoint that already exists
     for f in glob.glob(save_files):
         os.remove(f)
-    model.save('/scratch/li.baol/checkpoint_oracle/' + job_name + '_' + str(current_epoch) + '.h5')
+    model.save('/scratch/li.baol/checkpoint_test/' + job_name + '_' + str(current_epoch) + '.h5')
     print ('(SIGTERM) terminating the process')
-
-    message = job_name + ' checkpoint'
-    send_signal.send(args.node, 10002, message)
 
     sys.exit()
 
@@ -178,23 +174,18 @@ class PrintEpoch(keras.callbacks.Callback):
 my_callback = PrintEpoch()
 
 callbacks = [tensorboard_callback, my_callback]
- #[checkpoint, lr_reducer, lr_scheduler, tensorboard_callback]
-
-# Run training
-
-# send signal to indicate checkpoint is qualified
-message = job_name + ' ckpt_qual'
-send_signal.send(args.node, 10002, message)
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
-          epochs=round(total_epochs/2),
+          epochs=1,
           validation_data=(x_test, y_test),
           shuffle=True,
           callbacks=callbacks,
           initial_epoch=starting_epoch,
           verbose=1
           )
+if not args.resume:
+    terminateProcess()
 
 # Score trained model.
 scores = model.evaluate(x_test, y_test, verbose=1)

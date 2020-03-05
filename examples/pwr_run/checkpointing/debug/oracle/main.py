@@ -84,8 +84,8 @@ qualified_job = []
 pc_job = []
 
 K80_node = 'c2180'
-V100_node = 'd1006'
-host_node = 'c0179'
+V100_node = 'd1020'
+host_node = 'c0168'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -227,6 +227,12 @@ def thread_function():
                 data = connection.recv(32)
                 if data: 
                     data_str = data.decode('utf-8')
+                    global K80_start_time
+                    global V100_start_time
+                    global K80_job
+                    global v100_job
+                    global K80_time
+                    global V100_time
                     if 'param' in data_str:
                         pass
                     elif 'ckpt_qual' in data_str:
@@ -236,28 +242,24 @@ def thread_function():
                         # move overhead profiling here
                         global ovhd_start
                         global overhead
-                        global K80_start_time
-                        global V100_start_time
-                        global K80_job
-                        global V100_job
                         job = job_name.replace('job','')
                         if ovhd_start[job] != 0:
-                            if ckpt_qual_dict[job_name] == 1:
-                                overhead[job] += int(time.time() - ovhd_start[job])
-                                ovhd_start[job] = 0                   
+                            overhead[job] += int(time.time() - ovhd_start[job])
+                            ovhd_start[job] = 0 
+                            if job in list(K80_job.values()):
+                                K80_start_time[job] = time.time()
+                            elif job in list(V100_job.values()):
+                                V100_start_time[job] = time.time()
                     elif 'finish' in data_str:
                         global finish_dict
                         job_name = data_str.split(' ')[0]
                         job = job_name.replace('job','')
                         finish_dict[job_name] = 1
                         JCT[job] = int(time.time() - job_start[job])
-                        global K80_start_time
-                        global V100_start_time
-                        global K80_job
-                        global v100_job
-                        global K80_time
-                        global V100_time
-                        if #TODO determine if job is on K80 or V100, update K80_time and V100_time
+                        if job in list(K80_job.values()):
+                            K80_time[job] += int(time.time() - K80_start_time[job])
+                        elif job in list(V100_job.values()):
+                            V100_time[job] += int(time.time() - V100_start_time[job])
                     elif 'pid' in data_str:
                         global pid_dict
                         job_name = data_str.split(' ')[0]
@@ -271,7 +273,7 @@ def thread_function():
                         global epoch_waste_dict
                         job_name = data_str.split(' ')[0]
                         epoch_waste_time = data_str.split(' ')[2]
-                        epoch_waste_dict[job_name] += epoch_waste_time
+                        epoch_waste_dict[job_name] += int(epoch_waste_time)
 
                     print('received ' + data_str)
                     connection.sendall(b'success')
@@ -366,7 +368,7 @@ while True:
         if len(checkpoint_finish_check) > 0:
             while True:
                 time.sleep(5)
-                for job in checkpoint_finish_check[:]
+                for job in checkpoint_finish_check[:]:
                     if checkpoint_dict['job'+job] == 1: # checkpoint has finished, gpu is free
                         print(job + ' checkpointed successfully')
                         checkpoint_dict['job'+job] = 0 # reset it
@@ -455,6 +457,8 @@ num_mig_name = testcase + '_num_mig.json'
 epoch_waste_name = testcase + '_epoch_waste.json'
 ckpt_qual_name = 'ckpt_qual.json'
 finish_name = 'finish.json'
+K80_time_name = testcase + '_K80_time.json'
+V100_time_name = testcase + '_V100_time.json'
 
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
@@ -468,4 +472,8 @@ with open(ckpt_qual_name, 'w') as fp1:
     json.dump(ckpt_qual_dict, fp1, sort_keys=True, indent=4)
 with open(finish_name, 'w') as fp1:
     json.dump(finish_dict, fp1, sort_keys=True, indent=4)
+with open(K80_time_name, 'w') as fp3:
+    json.dump(K80_time, fp3, sort_keys=True, indent=4)
+with open(V100_time_name, 'w') as fp3:
+    json.dump(V100_time, fp3, sort_keys=True, indent=4)
 
