@@ -18,7 +18,10 @@ from datetime import datetime
 parser = argparse.ArgumentParser(description='TCP client')
 args = parser.parse_args()
 
-queue = [6, 33, 4, 43, 15, 47, 18, 42, 35, 40, 34, 20, 9, 29, 19, 22, 3, 5, 38, 7, 41, 39, 46, 17, 24, 28, 26, 45, 16, 14, 50, 48, 36, 27, 32, 8, 10, 49, 2, 12, 23, 1, 37, 31, 44, 21, 30, 11, 13, 25]
+queue = []
+for i in range(50):
+    queue.append(i+1)
+
 queue0 = queue[0:12] # 0 - 11
 queue1 = queue[12:24] # 12 - 23
 queue2 = queue[24:36] # 24 - 35
