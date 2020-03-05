@@ -30,6 +30,8 @@ import glob
 import json
 import send_signal
 
+load_start = time.time()
+
 parser = argparse.ArgumentParser(description='Tensorflow Cifar10 Training')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='specific testcase name')
 parser.add_argument('--resume', dest='resume', action='store_true', help='if True, resume training from a checkpoint')
@@ -130,6 +132,7 @@ current_epoch = 0
 ################### connects interrupt signal to the process #####################
 
 def terminateProcess():
+    save_start = time.time()
     # first record the wasted epoch time
     global epoch_begin_time
     if epoch_begin_time == 0:
@@ -143,6 +146,10 @@ def terminateProcess():
         os.remove(f)
     model.save('/scratch/li.baol/checkpoint_test/' + job_name + '_' + str(current_epoch) + '.h5')
     print ('(SIGTERM) terminating the process')
+
+    save_time = int(time.time() - save_start)
+    message = job_name + ' save ' + str(save_time)
+    send_signal.send(args.node, 10002, message)
 
     sys.exit()
 
@@ -167,6 +174,20 @@ my_callback = PrintEpoch()
 
 callbacks = [tensorboard_callback, my_callback]
 
+load_time = int(time.time() - load_start)
+if args.resume:
+    message = job_name + ' load ' + str(load_time)
+    send_signal.send(args.node, 10002, message)
+    # Score trained model.
+    scores = model.evaluate(x_test, y_test, verbose=1)
+    print('Test loss:', scores[0])
+    print('Test accuracy:', scores[1])
+    # send signal to indicate job has finished
+    message = job_name + ' finish'
+    send_signal.send(args.node, 10002, message)
+    sys.exit()
+
+
 model.fit(x_train, y_train,
           batch_size=batch_size,
           epochs=1,
@@ -178,12 +199,3 @@ model.fit(x_train, y_train,
           )
 if not args.resume:
     terminateProcess()
-
-# Score trained model.
-scores = model.evaluate(x_test, y_test, verbose=1)
-print('Test loss:', scores[0])
-print('Test accuracy:', scores[1])
-
-# send signal to indicate job has finished
-message = job_name + ' finish'
-send_signal.send(args.node, 10002, message)

@@ -16,62 +16,31 @@ import signal
 from datetime import datetime
 
 parser = argparse.ArgumentParser(description='TCP client')
-parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-queue = [6, 33, 4, 43, 15, 47, 18, 42, 35, 40, 34, 20, 9, 29, 19, 22, 3, 5, 38, 7, 41, 39, 46, 17, 24, 28, 26, 45, 16, 14, 50, 48, 36, 27, 32, 8, 10, 49, 2, 12, 23, 1, 37, 31, 44, 21, 30, 11, 13, 25] 
-queue_dict = {}
-arrival_time = 0 
-for item in queue:
-    queue_dict[item] = 0
-queue_timer = time.time()
+queue = [6, 33, 4, 43, 15, 47, 18, 42, 35, 40, 34, 20, 9, 29, 19, 22, 3, 5, 38, 7, 41, 39, 46, 17, 24, 28, 26, 45, 16, 14, 50, 48, 36, 27, 32, 8, 10, 49, 2, 12, 23, 1, 37, 31, 44, 21, 30, 11, 13, 25]
+queue0 = queue[0:12] # 0 - 11
+queue1 = queue[12:24] # 12 - 23
+queue2 = queue[24:36] # 24 - 35
+queue3 = queue[36:] # 36 - 49
 
-promo_time = {}
+save_time = {}
 for item in queue:
-    promo_time[str(item)] = 0
-demo_time = {}
+    save_time[str(item)] = 0
+load_time = {}
 for item in queue:
-    demo_time[str(item)] = 0
-promo_start = {} # initialize this to 0 as well
+    load_time[str(item)] = 0
+total_time = {}
 for item in queue:
-    promo_start[str(item)] = 0
-demo_start = {} # initialize this to 0 as well
+    total_time[str(item)] = 0
+finish_dict = {}
 for item in queue:
-    demo_start[str(item)] = 0
-
-queue_start = {} # initialize this to 0 as well
-for item in queue:
-    queue_start[str(item)] = 0
-queue_time = {} # initialize this to 0 as well
-for item in queue:
-    queue_time[str(item)] = 0
-
-speedup_dict = {}
-with open('speedup.json', 'r') as fp:
-    speedup_dict = json.load(fp)
-
-index = 0
-
-K80_cap = 1
-V100_cap = 1
-K80_used = 0
-V100_used = 0
-
-K80_job = {}
-for i in range(1):
-    K80_job[str(i)] = 'idle'
-V100_job = {}
-for i in range(1):
-    V100_job[str(i)] = 'idle'
-pc_job = []
+    finish_dict[str(item)] = 0
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0168'
-testcase = args.tc
+host_node = 'c0218'
 ### also, change .h5 file folder in jobs ###
-
-INTERVAL = 30 # make decision every 30s
 
 def send_signal(node, cmd):
     # Create a TCP/IP socket
@@ -101,19 +70,6 @@ def send_signal(node, cmd):
         #print('closing socket')
         sock.close()
 
-def save_job(node, job): # save_job('c2176', '50')
-    # first wait for the job to be qualified for checkpointing
-    while True: # wait for ckpt_qual to be available
-        global ckpt_qual_dict
-        if ckpt_qual_dict['job'+job] == 1:
-            ckpt_qual_dict['job'+job] = 0
-            break
-        time.sleep(5)
-    
-    global pid_dict
-    pid = pid_dict['job'+job]
-    send_signal(node, 'save ' + job + ' pid ' + pid) # 'save 50 pid 10000'
-
 # resume job
 def resume_job(node, gpu, job): # resume_job('c2176', '3', '50')
     cmd = 'resume ' + job + ' gpu ' + gpu
@@ -123,18 +79,6 @@ def resume_job(node, gpu, job): # resume_job('c2176', '3', '50')
 def start_job(node, gpu, job):
     cmd = 'start ' + job + ' gpu ' + gpu
     send_signal(node, cmd)   
-
-############### first clear finish status of all jobs ####################
-
-pid_dict = {}
-for i in range(50):
-    job_name = 'job' + str(i + 1)
-    pid_dict[job_name] = 0
-
-ckpt_qual_dict = {}
-for i in range(50):
-    job_name = 'job' + str(i + 1)
-    ckpt_qual_dict[job_name] = 0
 
 #################### background thread running TCP socket ########################
 
@@ -153,71 +97,28 @@ def thread_function():
                 data = connection.recv(32)
                 if data: 
                     data_str = data.decode('utf-8')
-                    global K80_job
-                    global v100_job
-                    global promo_start
-                    global promo_time
-                    global demo_start
-                    global demo_time
-                    global K80_used
-                    global V100_used
+                    global save_time
+                    global load_time
+                    global total_time
 
                     if 'param' in data_str:
                         pass
-                    elif 'ckpt_qual' in data_str:
-                        global ckpt_qual_dict
-                        job_name = data_str.split(' ')[0]
-                        ckpt_qual_dict[job_name] = 1
-                        job = job_name.replace('job','')
-                        # start recording time start
-                        pdb.set_trace()
-                        if job in list(K80_job.values()) and promo_start[job] == 0:
-                            # checkpoint on K80, record promo_start
-                            promo_start[job] = time.time()
-                            save_job(K80_node, job)
-                            print('checkpoint on K80')
-
-                        elif job in list(V100_job.values()) and demo_start[job] == 0:
-                            # record promo_time, checkpoint on V100, record demo_start
-                            promo_time[job] = int(time.time() - promo_start[job])
-                            print('measured promo_time')
-                            time.sleep(3)
-                            demo_start[job] = time.time()
-                            save_job(V100_node, job)
-                            print('checkpoint on V100')
-                        elif demo_start[job] != 0:
-                            # record demo_time, save job, then change K80 back to idle
-                            demo_time[job] = int(time.time() - demo_start[job])
-                            save_job(K80_node, job)
-                            print('measured demo_time')
-
-
-                    elif 'pid' in data_str:
-                        global pid_dict
-                        job_name = data_str.split(' ')[0]
-                        pid = data_str.split(' ')[2]
-                        pid_dict[job_name] = pid
-                    elif 'checkpoint' in data_str:
+                    elif 'save' in data_str: # 'job50 save 35'
                         job_name = data_str.split(' ')[0]
                         job = job_name.replace('job','')
-                        # resume to measure promote time
-                        if job in list(K80_job.values()) and job not in list(V100_job.values()):
-                            resume_job(V100_node, '0', job) 
-                            V100_job[0] = job_new
-                            V100_used += 1
-                            print('resume on V100')
-                        # resume to measure demote time
-                        elif job in list(V100_job.values()) and demo_time[job] == 0:
-                            resume_job(K80_node, '0', job)
-                            print('resume on K80')
-                        # clean up everything
-                        elif demo_time[job] != 0:
-                            V100_job[0] = 'idle'
-                            V100_used -= 1
-                            K80_job[0] = 'idle'
-                            K80_used -= 1
-                            time.sleep(3)
-                            print('cleaned up')
+                        time = data_str.split(' ')[2]
+                        save_time[job] = int(time) + 1 # in case this isn't changed
+                    elif 'load' in data_str: # 'job50 load 35'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        time = data_str.split(' ')[2]
+                        load_time[job] = int(time) + 1
+                        total_time[job] = save_time[job] + load_time[job]
+                    elif 'finish' in data_str: # 'job50 finish'
+                        global finish_dict
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        finish_dict[job] = 1
 
                     print('received ' + data_str)
                     connection.sendall(b'success')
@@ -230,61 +131,130 @@ def thread_function():
 x = threading.Thread(target=thread_function, daemon=True)
 x.start()
 
-pdb.set_trace()
-send_signal('c2180', 'abcd')
-while True:
-    time.sleep(5)
-
 ###############################################################################
 
 ######################################################################
 
-while True:
-    
-    ################ submit new jobs to vacant K80 GPUs ############################
+def thread0():
+    for job in queue0:
+        job = str(job)
+        print('profile job ' + job + ' on gpu 0')
+        # first collect save time
+        start_job(K80_node, '0', job)
+        while True:
+            if save_time[job] != 0:
+                break
+            else:
+                time.sleep(5)
+        time.sleep(5)
+        print('collected save time ' + str(save_time[job]))
+        # then collect load time
+        resume_job(V100_node, '0', job)
+        while True:
+            if finish_dict[job] == 1:
+                break
+            else:
+                time.sleep(5)
+        time.sleep(5)
+        print('collected load time ' + str(load_time[job]))
+x0 = threading.Thread(target=thread0)
+x0.start()
 
-    # check if there are vacant K80s
-    ## yes: submit jobs from queue
-    ## no: do nothing
+def thread1():
+   for job in queue1:
+       job = str(job)
+       print('profile job ' + job + ' on gpu 1')
+       # first collect save time
+       start_job(K80_node, '1', job)
+       while True:
+           if save_time[job] != 0:
+               break
+           else:
+               time.sleep(5)
+       time.sleep(5)
+       print('collected save time ' + str(save_time[job]))
+       # then collect load time
+       resume_job(V100_node, '1', job)
+       while True:
+           if finish_dict[job] == 1:
+               break
+           else:
+               time.sleep(5)
+       time.sleep(5)
+       print('collected load time ' + str(load_time[job]))
+x1 = threading.Thread(target=thread1)
+x1.start()
 
-    if K80_used < K80_cap:
-        K80_free = K80_cap - K80_used
-        for i in range(K80_free):
-            time_passed = int(time.time() - queue_timer)
-            if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
-                job_new = str(queue[index])
-                for gpu, job in K80_job.items():
-                    if job == 'idle': # schedule new job here if idle
-                        K80_job[gpu] = job_new # allocate gpu for it, but don't start yet
-                        index += 1
-                        K80_used += 1
-                        pdb.set_trace()
-                        start_job(K80_node, '0', job_new)
-                        print('started job' + job_new)
-                        break
+def thread2():
+   for job in queue2:
+       job = str(job)
+       print('profile job ' + job + ' on gpu 2')
+       # first collect save time
+       start_job(K80_node, '2', job)
+       while True:
+           if save_time[job] != 0:
+               break
+           else:
+               time.sleep(5)
+       time.sleep(5)
+       print('collected save time ' + str(save_time[job]))
+       # then collect load time
+       resume_job(V100_node, '2', job)
+       while True:
+           if finish_dict[job] == 1:
+               break
+           else:
+               time.sleep(5)
+       time.sleep(5)
+       print('collected load time ' + str(load_time[job]))
+x2 = threading.Thread(target=thread2)
+x2.start()
 
-    ############### wait for next iteration
+def thread3():
+   for job in queue3:
+       job = str(job)
+       print('profile job ' + job + ' on gpu 3')
+       # first collect save time
+       start_job(K80_node, '3', job)
+       while True:
+           if save_time[job] != 0:
+               break
+           else:
+               time.sleep(5)
+       time.sleep(5)
+       print('collected save time ' + str(save_time[job]))
+       # then collect load time
+       resume_job(V100_node, '3', job)
+       while True:
+           if finish_dict[job] == 1:
+               break
+           else:
+               time.sleep(5)
+       time.sleep(5)
+       print('collected load time ' + str(load_time[job]))
+x3 = threading.Thread(target=thread3)
+x3.start()
 
-    time.sleep(INTERVAL)
+x0.join()
+x1.join()
+x2.join()
+x3.join()
 
-    ################ check if termination condition is met ################
-
-    K80_idle_num = sum(value == 'idle' for value in K80_job.values())
-    V100_idle_num = sum(value == 'idle' for value in V100_job.values())
-    if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
-        print('all jobs are finished!')
-        break
-
+print('all threads finished')
 
 # after everything is finished
+while True:
+    if 0 not in list(finish_dict.values()):
+        print('finished all runs')
+        break
+    else:
+        print('error, not all jobs finished')
+        time.sleep(10)
 
-print('finished all runs')
-ckpt_qual_name = 'ckpt_qual.json'
-
-with open(ckpt_qual_name, 'w') as fp1:
-    json.dump(ckpt_qual_dict, fp1, sort_keys=True, indent=4)
-with open('promo_time.json', 'w') as fp1:
-    json.dump(promo_time, fp1, sort_keys=True, indent=4)
-with open('demo_time.json', 'w') as fp1:
-    json.dump(demo_time, fp1, sort_keys=True, indent=4)
+with open('save_time.json', 'w') as fp1:
+    json.dump(save_time, fp1, sort_keys=True, indent=4)
+with open('load_time.json', 'w') as fp1:
+    json.dump(load_time, fp1, sort_keys=True, indent=4)
+with open('total_time.json', 'w') as fp1:
+    json.dump(total_time, fp1, sort_keys=True, indent=4)
 
