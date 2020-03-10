@@ -14,6 +14,7 @@ import threading
 import _thread
 import signal
 from datetime import datetime
+import csv
 
 parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
@@ -37,6 +38,38 @@ for item in queue:
 ovhd_start = {} # initialize this to 0 as well
 for item in queue:
     ovhd_start[str(item)] = 0
+b_start = {} # initialize this to 0 as well
+for item in queue:
+    b_start[str(item)] = 0
+c_start = {} # initialize this to 0 as well
+for item in queue:
+    c_start[str(item)] = 0
+d_start = {} # initialize this to 0 as well
+for item in queue:
+    d_start[str(item)] = 0
+
+ovhd_a = {} # {1: [10, 12, ...], 2: [xx]} 
+for item in queue:
+    ovhd_a[str(item)] = []
+ovhd_b = {} # {1: [10, 12, ...], 2: [xx]} 
+for item in queue:
+    ovhd_b[str(item)] = []
+ovhd_c = {} # {1: [10, 12, ...], 2: [xx]} 
+for item in queue:
+    ovhd_c[str(item)] = []
+ovhd_d = {} # {1: [10, 12, ...], 2: [xx]} 
+for item in queue:
+    ovhd_d[str(item)] = []
+ovhd_total = {} # {1: [10, 12, ...], 2: [xx]} 
+for item in queue:
+    ovhd_total[str(item)] = []
+k80_1st = {}
+for item in queue:
+    k80_1st[str(item)] = []
+v100_1st = {}
+for item in queue:
+    v100_1st[str(item)] = []
+
 num_mig = {} # initialize migration time to 0
 for item in queue:
     num_mig[str(item)] = 0
@@ -86,7 +119,7 @@ pc_job = []
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0168'
+host_node = 'c0175'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -234,23 +267,12 @@ def thread_function():
                     global v100_job
                     global K80_time
                     global V100_time
-                    if 'param' in data_str:
-                        pass
-                    elif 'ckpt_qual' in data_str:
+                    global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
+                    global b_start, c_start, d_start
+                    if 'ckpt_qual' in data_str:
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
                         ckpt_qual_dict[job_name] = 1
-                        # move overhead profiling here
-                        global ovhd_start
-                        global overhead
-                        job = job_name.replace('job','')
-                        if ovhd_start[job] != 0:
-                            overhead[job] += int(time.time() - ovhd_start[job])
-                            ovhd_start[job] = 0 
-                            if job in list(K80_job.values()):
-                                K80_start_time[job] = time.time()
-                            elif job in list(V100_job.values()):
-                                V100_start_time[job] = time.time()
                     elif 'finish' in data_str:
                         global finish_dict
                         job_name = data_str.split(' ')[0]
@@ -266,15 +288,48 @@ def thread_function():
                         job_name = data_str.split(' ')[0]
                         pid = data_str.split(' ')[2]
                         pid_dict[job_name] = pid
-                    elif 'checkpoint' in data_str:
+                    elif 'checkpoint' in data_str: # can only be received after save signal is sent
                         global checkpoint_dict
                         job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')                        
                         checkpoint_dict[job_name] = 1
+                        ovhd_a[job].append(int(time.time() - ovhd_start[job]))
+                        b_start[job] = time.time()
                     elif 'waste' in data_str:
                         global epoch_waste_dict
                         job_name = data_str.split(' ')[0]
                         epoch_waste_time = data_str.split(' ')[2]
                         epoch_waste_dict[job_name] += int(epoch_waste_time)
+                    elif 'b_end' in data_str:
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        ovhd_b[job].append(int(time.time() - b_start[job]))
+                        c_start[job] = time.time()
+                    elif 'c_end' in data_str:
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        ovhd_c[job].append(int(time.time() - c_start[job]))
+                        d_start[job] = time.time()
+                    elif 'd_end' in data_str:
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        ovhd_d[job].append(int(time.time() - d_start[job]))
+                        ovhd_total[job].append(int(time.time() - ovhd_start[job]))
+                        if ovhd_start[job] != 0:
+                            overhead[job] += int(time.time() - ovhd_start[job])
+                            ovhd_start[job] = 0 
+                            if job in list(K80_job.values()):
+                                K80_start_time[job] = time.time()
+                            elif job in list(V100_job.values()):
+                                V100_start_time[job] = time.time()
+                    elif '1st_epoch' in data_str: # 'job50 1st_epoch 35'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        epoch_time = int(data_str.split(' ')[2])
+                        if job in list(K80_job.values()):
+                            k80_1st[job].append(epoch_time)
+                        elif job in list(V100_job.values()):
+                            v100_1st[job].append(epoch_time)
 
                     print('received ' + data_str)
                     connection.sendall(b'success')
@@ -468,6 +523,13 @@ finish_name = 'finish.json'
 K80_time_name = testcase + '_K80_time.json'
 V100_time_name = testcase + '_V100_time.json'
 gpu_usage_name = testcase + '_gpu_usage.csv'
+ovhd_a_name = testcase + '_ovhd_a.json'
+ovhd_b_name = testcase + '_ovhd_b.json'
+ovhd_c_name = testcase + '_ovhd_c.json'
+ovhd_d_name = testcase + '_ovhd_d.json'
+ovhd_total_name = testcase + '_ovhd_total.json'
+k80_1st_name = testcase + '_k80_1st.json'
+v100_1st_name = testcase + '_v100_1st.json'
 
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
@@ -485,7 +547,26 @@ with open(K80_time_name, 'w') as fp3:
     json.dump(K80_time, fp3, sort_keys=True, indent=4)
 with open(V100_time_name, 'w') as fp3:
     json.dump(V100_time, fp3, sort_keys=True, indent=4)
+with open(ovhd_a_name, 'w') as fp3:
+    json.dump(ovhd_a, fp3, sort_keys=True, indent=4)
+with open(ovhd_b_name, 'w') as fp3:
+    json.dump(ovhd_b, fp3, sort_keys=True, indent=4)
+with open(ovhd_c_name, 'w') as fp3:
+    json.dump(ovhd_c, fp3, sort_keys=True, indent=4)
+with open(ovhd_d_name, 'w') as fp3:
+    json.dump(ovhd_d, fp3, sort_keys=True, indent=4)
+with open(ovhd_total_name, 'w') as fp3:
+    json.dump(ovhd_total, fp3, sort_keys=True, indent=4)
+with open(k80_1st_name, 'w') as fp3:
+    json.dump(k80_1st, fp3, sort_keys=True, indent=4)
+with open(v100_1st_name, 'w') as fp3:
+    json.dump(v100_1st, fp3, sort_keys=True, indent=4)
+
 gpu_usage_time = np.asarray(gpu_usage_time)
 gpu_usage = np.asarray(gpu_usage)
-np.savetxt(gpu_usage_name, (gpu_usage_time, gpu_usage), delimiter=',') 
+rows = zip(gpu_usage_time, gpu_usage)
+with open(gpu_usage_name, 'w') as f:
+    writer = csv.writer(f)
+    for row in rows:
+        writer.writerow(row)
 
