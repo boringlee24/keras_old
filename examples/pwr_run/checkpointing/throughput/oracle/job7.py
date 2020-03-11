@@ -188,6 +188,11 @@ class PrintEpoch(keras.callbacks.Callback):
             first_epoch_start = time.time()
             message = job_name + ' d_end'
             send_signal.send(args.node, 10002, message)
+        if epoch == starting_epoch:
+            # send signal to indicate checkpoint is qualified
+            message = job_name + ' ckpt_qual'
+            send_signal.send(args.node, 10002, message)
+
 
     def on_epoch_end(self, epoch, logs=None):
         if epoch == starting_epoch and args.resume:
@@ -201,10 +206,6 @@ callbacks = [tensorboard_callback, my_callback]
  #[checkpoint, lr_reducer, lr_scheduler, tensorboard_callback]
 
 # Run training
-
-# send signal to indicate checkpoint is qualified
-message = job_name + ' ckpt_qual'
-send_signal.send(args.node, 10002, message)
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
