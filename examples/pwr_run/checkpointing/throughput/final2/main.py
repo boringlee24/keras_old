@@ -101,7 +101,6 @@ promote_start_time = {}
 for item in queue:
     promote_start_time[str(item)] = 0
 demote_list = []
-#TODO
 
 K80_time = {}
 for item in queue:
@@ -186,29 +185,31 @@ def send_signal(node, cmd):
 def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote):
     num_demote = len(force_demote)
     num_promote = len(promote_list)  
-    V100_vacant = num_demote + V100_free - len(demote_list)
+    V100_vacant = num_demote + V100_free
     K80_vacant = num_promote + K80_free 
     global speedup_dict
-    if K80_vacant >= num_demote: # if more vacant K80s than demote jobs, always demote
+    if K80_vacant >= num_demote: # if more vacant K80s than demote jobs, always force demote
         # selectively promote among active V100 jobs and promote list jobs
-        V100_qual = list(set(list(V100_job.values())) - set(force_demote) - set(demote_list))
-        if 'idle' in V100_qual:
-            V100_qual.remove('idle')
+        V100_qual = demote_list
+        #if 'idle' in V100_qual:
+        #    V100_qual.remove('idle')
         V100_pool = list(set(V100_qual).union(promote_list))       
-        if len(V100_pool) <= 4: # promote all jobs as well
+        if num_promote <= V100_vacant: # promote all jobs as well
             return promote_list, force_demote
         else: # promote the top 4 jobs            
             pool_dict = {}
+            V100_avail = V100_vacant + len(V100_qual)
             for job in V100_pool:
                 if job in speedup_dict:
                     pool_dict[job] = speedup_dict[job]        
-            sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:4] 
+            sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:V100_avail] 
             promotion_list = list(set(promote_list).intersection(sorted_pool))                     
-            demotion_list = list(set(list(V100_job.values())).difference(sorted_pool))
+            demotion_list = list(set(demote_list).difference(sorted_pool))
             if 'idle' in demotion_list:
                 demotion_list.remove('idle') # this includes force demotion
 
             return promotion_list, demotion_list
+    # situations below won't happen
     elif V100_vacant >= num_promote: # if more vacant V100s than promote jobs, always promote
         # less vacant K80s than demote jobs, select worst among force demote list
         pool_dict = {} # here the pool only includes force demote jobs
@@ -348,7 +349,7 @@ def thread_function():
                 if data: 
                     data_str = data.decode('utf-8')
                     global K80_start_time
-                    global V100_start_time
+                    global V100_start_time, promote_start_time
                     global K80_job
                     global v100_job
                     global K80_time
@@ -408,6 +409,7 @@ def thread_function():
                                 K80_start_time[job] = time.time()
                             elif job in list(V100_job.values()):
                                 V100_start_time[job] = time.time()
+                                promote_start_time[job] = time.time()
                     elif '1st_epoch' in data_str: # 'job50 1st_epoch 35'
                         job_name = data_str.split(' ')[0]
                         job = job_name.replace('job','')
@@ -452,6 +454,7 @@ while True:
                 V100_used -= 1            
                 V100_job[gpu] = 'idle'
                 print('V100 finished job: ' + job)
+                demote_list.remove(job)
 
     ################ check step1 finished job of K80 jobs and step 2 of V100 #################
 
@@ -481,6 +484,16 @@ while True:
     # this returns job forced to be demoted. Currently in V100, and is practically complete
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
 
+    # look at demote list
+    for gpu, job in V100_job.items():
+        if job != 'idle':
+            if job not in demote_list and job in step2_job and len(ovhd_total[job]) > 0:
+                job_speedup = speedup_dict[job] # 0.7
+                job_ovhd = np.mean(ovhd_total[job]) # 100
+                demote_qualify_time = job_speedup * 600 + job_ovhd 
+                if int(time.time() - promote_start_time) > demote_qualify_time:
+                    demote_list.append(job)
+
     if len(promote_list) > 0:
         promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote)
         if len(promoted) > 0:
@@ -508,6 +521,7 @@ while True:
                 checkpoint_finish_check.append(job)
                 V100_job[gpu] = 'idle'
                 V100_used -= 1
+                demote_list.remove(job)
 
         # wait for all GPUs to be available
         if len(checkpoint_finish_check) > 0:
