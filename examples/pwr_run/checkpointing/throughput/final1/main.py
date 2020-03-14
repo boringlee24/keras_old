@@ -132,7 +132,7 @@ pc_job = []
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0170'
+host_node = 'c0192'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -429,8 +429,8 @@ def thread_function():
                             k80_1st[job].append(epoch_time)
                         elif job in list(V100_job.values()):
                             v100_1st[job].append(epoch_time)
-
-                    print('received ' + data_str)
+                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                        print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
@@ -480,7 +480,7 @@ while True:
                 if job in step1_job:
                     qualified_job.append(job)
                     print('job' + job + ' has been qualified for promotion')
-                    speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0]
+                    speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                     speedup_dict[job] = speedup_pred
                     predict_dict[job] = speedup_pred
 

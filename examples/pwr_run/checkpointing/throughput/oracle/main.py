@@ -330,8 +330,8 @@ def thread_function():
                             k80_1st[job].append(epoch_time)
                         elif job in list(V100_job.values()):
                             v100_1st[job].append(epoch_time)
-
-                    print('received ' + data_str)
+                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                        print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:

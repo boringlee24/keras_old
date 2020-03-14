@@ -96,6 +96,13 @@ for item in queue:
 V100_start_time = {}
 for item in queue:
     V100_start_time[str(item)] = 0
+
+promote_start_time = {}
+for item in queue:
+    promote_start_time[str(item)] = 0
+demote_list = []
+#TODO
+
 K80_time = {}
 for item in queue:
     K80_time[str(item)] = 0
@@ -176,15 +183,15 @@ def send_signal(node, cmd):
         #print('closing socket')
         sock.close()
 
-def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_demote):
+def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote):
     num_demote = len(force_demote)
     num_promote = len(promote_list)  
-    V100_vacant = num_demote + V100_free
+    V100_vacant = num_demote + V100_free - len(demote_list)
     K80_vacant = num_promote + K80_free 
     global speedup_dict
     if K80_vacant >= num_demote: # if more vacant K80s than demote jobs, always demote
         # selectively promote among active V100 jobs and promote list jobs
-        V100_qual = list(set(list(V100_job.values())) - set(force_demote))
+        V100_qual = list(set(list(V100_job.values())) - set(force_demote) - set(demote_list))
         if 'idle' in V100_qual:
             V100_qual.remove('idle')
         V100_pool = list(set(V100_qual).union(promote_list))       
@@ -201,26 +208,6 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_dem
             if 'idle' in demotion_list:
                 demotion_list.remove('idle') # this includes force demotion
 
-            #### lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
-            #### K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.1, replace the K80 job
-            #### in sorted pool
-            ###global ovhd_total
-            ###for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
-            ###    if job_demote in demotion_list:
-            ###        for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
-            ###            if job_promote in promotion_list:
-            ###                # calculate overhead of demoting and promoting jobs
-            ###                demo_ovhd = np.mean(ovhd_total[job_demote])
-            ###                if len(ovhd_total[job_promote]) > 0:
-            ###                    promo_ovhd = np.mean(ovhd_total[job_promote])
-            ###                else:
-            ###                    promo_ovhd = demo_ovhd
-            ###                value = (speedup_dict[job_promote] - speedup_dict[job_demote])*2000/100 - (promo_ovhd +
-            ###                demo_ovhd + 2 * 90)
-            ###                if value < 0:
-            ###                    demotion_list.remove(job_demote)
-            ###                    promotion_list.remove(job_promote)
-            ###                    break
             return promotion_list, demotion_list
     elif V100_vacant >= num_promote: # if more vacant V100s than promote jobs, always promote
         # less vacant K80s than demote jobs, select worst among force demote list
@@ -429,8 +416,8 @@ def thread_function():
                             k80_1st[job].append(epoch_time)
                         elif job in list(V100_job.values()):
                             v100_1st[job].append(epoch_time)
-
-                    print('received ' + data_str)
+                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                        print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
@@ -480,7 +467,7 @@ while True:
                 if job in step1_job:
                     qualified_job.append(job)
                     print('job' + job + ' has been qualified for promotion')
-                    speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0]
+                    speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                     speedup_dict[job] = speedup_pred
                     predict_dict[job] = speedup_pred
 
@@ -495,7 +482,7 @@ while True:
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
 
     if len(promote_list) > 0:
-        promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
+        promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote)
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
@@ -640,6 +627,7 @@ k80_1st_name = testcase + '_k80_1st.json'
 v100_1st_name = testcase + '_v100_1st.json'
 speedup_name = 'speedup.json'
 predict_name = 'predict.json'
+demote_list_name = 'demote_list.json'
 
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
@@ -675,6 +663,8 @@ with open(speedup_name, 'w') as fp1:
    json.dump(speedup_dict, fp1, sort_keys=True, indent=4)
 with open(predict_name, 'w') as fp1:
    json.dump(predict_dict, fp1, sort_keys=True, indent=4)
+with open(demote_list_name, 'w') as fp1:
+   json.dump(demote_list, fp1, sort_keys=True, indent=4)
 
 gpu_usage_time = np.asarray(gpu_usage_time)
 gpu_usage = np.asarray(gpu_usage)

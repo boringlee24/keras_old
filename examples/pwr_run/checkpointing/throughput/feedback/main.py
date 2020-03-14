@@ -384,8 +384,8 @@ def thread_function():
                             k80_1st[job].append(epoch_time)
                         elif job in list(V100_job.values()):
                             v100_1st[job].append(epoch_time)
-
-##                    print('received ' + data_str)
+                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                        print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
@@ -486,9 +486,9 @@ while True:
             if finish_dict['job'+job_new] != 1:
                 for gpu, job in V100_job.items():
                     if job == 'idle': # if gpu idle, schedule new job here
+                        V100_job[gpu] = job_new
                         resume_job(V100_node, gpu, job_new)
                         num_mig[job_new] += 1
-                        V100_job[gpu] = job_new
                         promoted.remove(job_new)
                         V100_used += 1
                         break

@@ -239,8 +239,8 @@ def thread_function():
                         job_name = data_str.split(' ')[0]
                         epoch_waste_time = data_str.split(' ')[2]
                         epoch_waste_dict[job_name] += int(epoch_waste_time)
-
-                    print('received ' + data_str)
+                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                        print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
