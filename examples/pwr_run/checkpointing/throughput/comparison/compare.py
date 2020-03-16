@@ -15,11 +15,17 @@ with open('../random/logs/random_JCT.json', 'r') as fp:
     random_only = json.load(fp)
 with open('../feedback/logs/feedback_JCT.json', 'r') as fp:
     feedback_only = json.load(fp)
+with open('../final1/logs/final1_JCT.json', 'r') as fp:
+    final1_only = json.load(fp)
+with open('../final2/logs/final2_JCT.json', 'r') as fp:
+    final2_only = json.load(fp)
 
 oracle = []
 unaware = []
 random = []
 feedback = []
+final1 = []
+final2 = []
 
 for i in range(50):
     job = str(i+1)
@@ -27,17 +33,24 @@ for i in range(50):
     unaware.append(unaware_only[job])
     random.append(random_only[job])
     feedback.append(feedback_only[job])
+    final1.append(final1_only[job])
+    final2.append(final2_only[job])
 
 speedup = np.mean(unaware) / np.mean(oracle)
 
 norm_oracle = []
 norm_random = []
 norm_feedback = []
+norm_final1 = []
+norm_final2 = []
+
 for i in range(len(unaware)):
     job = str(i+1)
     norm_oracle.append(round(unaware_only[job]/oracle_only[job], 1))
     norm_random.append(round(unaware_only[job]/random_only[job], 1))
     norm_feedback.append(round(unaware_only[job]/feedback_only[job], 1))
+    norm_final1.append(round(unaware_only[job]/final1_only[job], 1))
+    norm_final2.append(round(unaware_only[job]/final2_only[job], 1))
 
 
 avg = np.mean(norm_oracle)

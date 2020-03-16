@@ -138,7 +138,7 @@ pc_job = []
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0170'
+host_node = 'c0214'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -454,7 +454,8 @@ while True:
                 V100_used -= 1            
                 V100_job[gpu] = 'idle'
                 print('V100 finished job: ' + job)
-                demote_list.remove(job)
+                if job in demote_list:
+                    demote_list.remove(job)
 
     ################ check step1 finished job of K80 jobs and step 2 of V100 #################
 
@@ -490,9 +491,10 @@ while True:
             if job not in demote_list and job in step2_job and len(ovhd_total[job]) > 0:
                 job_speedup = speedup_dict[job] # 0.7
                 job_ovhd = np.mean(ovhd_total[job]) # 100
-                demote_qualify_time = job_speedup * 600 + job_ovhd 
-                if int(time.time() - promote_start_time) > demote_qualify_time:
+                demote_qualify_time = job_speedup * 600 + job_ovhd * 2 + 100 
+                if int(time.time() - promote_start_time[job]) > demote_qualify_time:
                     demote_list.append(job)
+                    print('job' + job + 'qualified for demote')
 
     if len(promote_list) > 0:
         promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote)
