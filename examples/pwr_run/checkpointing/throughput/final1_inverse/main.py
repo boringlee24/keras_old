@@ -133,7 +133,7 @@ pc_job = []
 
 K80_node = 'c2180'
 V100_node = 'd1020'
-host_node = 'c0233'
+host_node = 'c0198'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -235,7 +235,7 @@ def min_speedup_demotion(K80_job, demote_list):
         demotion_list = list(set(demote_list).intersection(sorted_pool))
         promotion_list = list(set(list(K80_job.values())).difference(sorted_pool))
         if 'idle' in promotion_list:
-            demotion_list.remove('idle') # this includes force demotion
+            promotion_list.remove('idle') # this includes force demotion
         return promotion_list, demotion_list
 
 def save_job(node, job): # save_job('c2176', '50')
@@ -506,7 +506,7 @@ while True:
         if all_jobs_started: # promote jobs to vacant V100 GPUs
             promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_demote)
         else: # demote jobs to vacant K80 GPUs
-            promoted, demote = min_speedup_demotion(K80_job, demote_list) 
+            promoted, demoted = min_speedup_demotion(K80_job, demote_list) 
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
