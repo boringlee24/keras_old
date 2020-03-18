@@ -87,9 +87,13 @@ for item in queue:
 queue_time = {} # initialize this to 0 as well
 for item in queue:
     queue_time[str(item)] = 0
+V100_epoch_time = {}
+for item in queue:
+    V100_epoch_time[str(item)] = 0
 K80_epoch_time = {}
 for item in queue:
     K80_epoch_time[str(item)] = 0
+
 K80_start_time = {}
 for item in queue:
     K80_start_time[str(item)] = 0
@@ -280,6 +284,7 @@ def check_step2_complete(job_list):
     global step1_job
     global step2_job
     global K80_epoch_time
+    global V100_epoch_time
     global speedup_dict
 
     for job in job_list:
@@ -294,6 +299,7 @@ def check_step2_complete(job_list):
                 try:
                     if len(iterator.Scalars(tag)) > 2: # this way we can collect one epoch time
                         wall_time = [t.wall_time for t in iterator.Scalars(tag)]
+                        V100_epoch_time[job] = wall_time[1] - wall_time[0]
                         K80_time_step2 = K80_epoch_time[job]
                         V100_time_step2 = wall_time[1] - wall_time[0]
                         speedup = (K80_time_step2 - V100_time_step2) / K80_time_step2
@@ -491,6 +497,8 @@ while True:
             if job not in demote_list and job in step2_job and len(ovhd_total[job]) > 0:
                 job_speedup = speedup_dict[job] # 0.7
                 job_ovhd = np.mean(ovhd_total[job]) # 100
+                k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
+                v100_1st_ovhd = np.mean(v100_1st[job]) - V100_epoch_time[job]
                 demote_qualify_time = job_speedup * 600 + job_ovhd * 2 + 100 
                 if int(time.time() - promote_start_time[job]) > demote_qualify_time:
                     demote_list.append(job)
@@ -553,7 +561,8 @@ while True:
                         V100_used += 1
                         break
             else: # job has already finished before checkpointing
-                promoted.remove(job_new)
+                print('job'+job_new+' has finished before checkpointing')
+                demoted.remove(job_new)
 
         # resume demoted jobs on K80, make sure the gpu is idle
         for job_new in demoted[:]:
