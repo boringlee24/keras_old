@@ -549,7 +549,8 @@ while True:
         for gpu, job in K80_job.items():
             if job in promoted:
                 save_job(K80_node, job)
-                K80_time[job] += int(time.time() - K80_start_time[job])
+                if finish_dict['job'+job] != 1:
+                    K80_time[job] += int(time.time() - K80_start_time[job])
                 checkpoint_finish_check.append(job)
                 K80_job[gpu] = 'idle'
                 K80_used -= 1
@@ -561,7 +562,8 @@ while True:
                 if job in step1_job and job not in step2_job:
                     speedup_dict[job] = 0.01 
                 save_job(V100_node, job)
-                V100_time[job] += int(time.time() - V100_start_time[job])
+                if finish_dict['job'+job] != 1:
+                    V100_time[job] += int(time.time() - V100_start_time[job])
                 checkpoint_finish_check.append(job)
                 V100_job[gpu] = 'idle'
                 V100_used -= 1
