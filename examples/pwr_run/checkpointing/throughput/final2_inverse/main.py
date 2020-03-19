@@ -142,7 +142,7 @@ step2_job = []
 pc_job = []
 
 K80_node = 'c2180'
-V100_node = 'd1020'
+V100_node = 'd1024'
 host_node = 'c0168'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
