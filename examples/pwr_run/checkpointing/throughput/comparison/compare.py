@@ -27,6 +27,8 @@ with open('../final2_inverse/logs/final2_inverse_JCT.json', 'r') as fp:
     final2_inverse_only = json.load(fp)
 with open('../final3/logs/final3_JCT.json', 'r') as fp:
     final3_only = json.load(fp)
+with open('../final4/logs/final4_JCT.json', 'r') as fp:
+    final4_only = json.load(fp)
 
 oracle = []
 unaware = []
@@ -38,6 +40,7 @@ final1_test = []
 final1_inverse = []
 final2_inverse = []
 final3 = []
+final4 = []
 
 for i in range(50):
     job = str(i+1)
@@ -51,6 +54,7 @@ for i in range(50):
     final1_inverse.append(final1_inverse_only[job])
     final2_inverse.append(final2_inverse_only[job])
     final3.append(final3_only[job])
+    final4.append(final4_only[job])
 
 speedup = np.mean(unaware) / np.mean(oracle)
 
@@ -63,6 +67,7 @@ norm_final1_test = []
 norm_final1_inverse = []
 norm_final2_inverse = []
 norm_final3 = []
+norm_final4 = []
 
 for i in range(len(unaware)):
     job = str(i+1)
@@ -75,6 +80,7 @@ for i in range(len(unaware)):
     norm_final1_inverse.append(round(unaware_only[job]/final1_inverse_only[job], 1))
     norm_final2_inverse.append(round(unaware_only[job]/final2_inverse_only[job], 1))
     norm_final3.append(round(unaware_only[job]/final3_only[job], 1))
+    norm_final4.append(round(unaware_only[job]/final4_only[job], 1))
 
 
 avg = np.mean(norm_oracle)

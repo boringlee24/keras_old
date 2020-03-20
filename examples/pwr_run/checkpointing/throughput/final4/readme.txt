@@ -1,3 +1,4 @@
-compared to oracle in nonpc_short
-1. removed unneccessary communication through json files. All are using TCP
-2. implemented more careful profiling, including k80_time and v100_time
+compared to final3
+1. adjusted speedup difference restriction
+2. used V100 KNN model instead of the K80 model
+3. implemented real-time power and utilization collection on V100
