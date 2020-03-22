@@ -187,6 +187,8 @@ class PrintEpoch(keras.callbacks.Callback):
             first_epoch_start = time.time()
             message = job_name + ' d_end'
             send_signal.send(args.node, 10002, message)
+        elif epoch == starting_epoch:
+            first_epoch_start = time.time()           
         if epoch == starting_epoch:
             # send signal to indicate checkpoint is qualified
             message = job_name + ' ckpt_qual'
@@ -194,10 +196,13 @@ class PrintEpoch(keras.callbacks.Callback):
 
 
     def on_epoch_end(self, epoch, logs=None):
-        if epoch == starting_epoch and args.resume:
+        if epoch == starting_epoch:
             first_epoch_time = int(time.time() - first_epoch_start)
             message = job_name + ' 1st_epoch ' + str(first_epoch_time)
             send_signal.send(args.node, 10002, message)
+        progress = round((epoch+1) / round(total_epochs/2), 2)
+        message = job_name + ' completion ' + str(progress)
+        send_signal.send(args.node, 10002, message)
 
 my_callback = PrintEpoch()
 
