@@ -32,6 +32,9 @@ job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
 for item in queue:
     JCT[str(item)] = 0
+completion = {}
+for item in queue:
+    completion[str(item)] = 0
 overhead = {} # initialize so that every job starts with 0s overhead time
 for item in queue:
     overhead[str(item)] = 0
@@ -96,6 +99,7 @@ for item in queue:
     V100_time[str(item)] = 0
 gpu_usage_time = [] # don't initialize this
 gpu_usage = []
+gpu_usage_completion = []
 
 index = 0
 
@@ -149,19 +153,25 @@ def send_signal(node, cmd):
         #print('closing socket')
         sock.close()
 
-def random_promotion(K80_free, V100_free, promote_list, force_demote):
+def random_promotion(K80_free, V100_free, promote_list, demote_list, force_demote):
     num_demote = len(force_demote)
     num_promote = len(promote_list)
 
     # if more promote jobs than demote jobs, always demote all demote jobs
     if len(promote_list) >= len(force_demote):
-        V100_avail = num_demote + V100_free
-        if V100_avail >= len(promote_list):
-            return promote_list, force_demote
+        V100_avail = num_demote + V100_free + len(demote_list)
+        V100_pool = list(set(demote_list).union(promote_list))
+
+        if V100_avail >= len(V100_pool): # all jobs in promote_list get promoted
+            return promote_list[:], force_demote[:]
         else:
-            return random.sample(promote_list, V100_avail), force_demote
+            sorted_pool = random.sample(V100_pool, V100_avail)
+            promotion_list = list(set(promote_list).intersection(sorted_pool))
+            demotion_list = list(set(demote_list).difference(sorted_pool))
+            return promotion_list, demotion_list
     # if more demote jobs than promote jobs, always promote all promote jobs
     else:
+        print('error, should not happen')
         K80_avail = num_promote + K80_free
         if K80_avail >= len(force_demote):
             return promote_list, force_demote
@@ -247,7 +257,7 @@ def thread_function():
                     global K80_time
                     global V100_time
                     global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
-                    global b_start, c_start, d_start
+                    global b_start, c_start, d_start, completion
                     if 'ckpt_qual' in data_str:
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
@@ -309,6 +319,11 @@ def thread_function():
                             k80_1st[job].append(epoch_time)
                         elif job in list(V100_job.values()):
                             v100_1st[job].append(epoch_time)
+                    elif 'completion' in data_str: # 'job50 completion 0.33'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        completion_portion = float(data_str.split(' ')[2])
+                        completion[job] = completion_portion
                     if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
                         print('received ' + data_str)
                     connection.sendall(b'success')
@@ -366,15 +381,30 @@ while True:
                         index += 1
                         K80_used += 1
                         break
+    if V100_used < V100_cap:
+        V100_free = V100_cap - V100_used
+        for i in range(V100_free):
+            time_passed = int(time.time() - queue_timer)
+            if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
+                job_new = str(queue[index])
+                for gpu, job in V100_job.items():
+                    if job == 'idle': # schedule new job here if idle
+                        new_pool.append(job_new)
+                        qualified_job.append(job_new)
+                        V100_job[gpu] = job_new # allocate gpu for it, but don't start yet
+                        index += 1
+                        V100_used += 1
+                        break
 
     # make promotion decisions
     V100_free = V100_cap - V100_used
     K80_free = K80_cap - K80_used
     promote_list = list(set(qualified_job).intersection(list(K80_job.values())).difference(pc_job))
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
+    demote_list = list(set(list(V100_job.values())).intersection(new_pool))
 
     if len(promote_list) > 0:
-        promoted, demoted = random_promotion(K80_free, V100_free, promote_list, force_demote)
+        promoted, demoted = random_promotion(K80_free, V100_free, promote_list, demote_list, force_demote)
         if len(promoted) > 0:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
@@ -394,10 +424,11 @@ while True:
         # stop all demoted jobs on V100
         for gpu, job in V100_job.items():
             if job in demoted:
-                save_job(V100_node, job)
-                if finish_dict['job'+job] != 1:
-                    V100_time[job] += int(time.time() - V100_start_time[job])
-                checkpoint_finish_check.append(job)
+                if job not in new_pool: # don't do checkpointing for new jobs
+                    save_job(V100_node, job)
+                    if finish_dict['job'+job] != 1:
+                        V100_time[job] += int(time.time() - V100_start_time[job])
+                    checkpoint_finish_check.append(job)
                 V100_job[gpu] = 'idle'
                 V100_used -= 1
 
@@ -417,6 +448,17 @@ while True:
                 if len(checkpoint_finish_check) == 0:
                     break
 
+        V100_new_remain = list(set(demote_list).difference(demoted))
+        # start remaining new jobs on K80, make sure the gpu equals its allocated one
+        for job_new in V100_new_remain:
+            for gpu, job in V100_job.items():
+                if job == job_new: # if gpu idle, schedule new job here
+                    start_job(V100_node, gpu, job_new)
+                    job_start[job_new] = time.time()
+                    V100_start_time[job_new] = time.time()
+                    new_pool.remove(job_new)
+                    break
+
         # resume promoted jobs on V100, make sure the gpu is idle
         for job_new in promoted[:]:
             if finish_dict['job'+job_new] != 1:
@@ -434,6 +476,7 @@ while True:
                         promoted.remove(job_new)
                         V100_used += 1
                         break
+                        
             else: # job has already finished before checkpointing
                 promoted.remove(job_new)
 
@@ -452,8 +495,10 @@ while True:
             if finish_dict['job'+job_new] != 1:
                 for gpu, job in K80_job.items():
                     if job == 'idle': # if gpu idle, schedule new job here
-                        resume_job(K80_node, gpu, job_new)
-                        num_mig[job_new] += 1
+                        start_job(K80_node, gpu, job_new)
+                        job_start[job_new] = time.time()
+                        K80_start_time[job_new] = time.time()
+                        new_pool.remove(job_new)
                         K80_job[gpu] = job_new
                         demoted.remove(job_new)
                         K80_used += 1
@@ -471,6 +516,8 @@ while True:
     time_stamp = int(time.time() - queue_timer)
     gpu_usage_time.append(time_stamp)
     gpu_usage.append(usage)
+    total_completion = np.sum(list(completion.values()))
+    gpu_usage_completion.append(total_completion)
 
     ############### wait for next iteration
 
@@ -504,6 +551,7 @@ finish_name = 'finish.json'
 K80_time_name = testcase + '_K80_time.json'
 V100_time_name = testcase + '_V100_time.json'
 gpu_usage_name = testcase + '_gpu_usage.csv'
+completion_name = 'completion.json'
 ovhd_a_name = testcase + '_ovhd_a.json'
 ovhd_b_name = testcase + '_ovhd_b.json'
 ovhd_c_name = testcase + '_ovhd_c.json'
@@ -542,10 +590,13 @@ with open(k80_1st_name, 'w') as fp3:
     json.dump(k80_1st, fp3, sort_keys=True, indent=4)
 with open(v100_1st_name, 'w') as fp3:
     json.dump(v100_1st, fp3, sort_keys=True, indent=4)
+with open(completion_name, 'w') as fp1:
+   json.dump(completion, fp1, sort_keys=True, indent=4)
 
 gpu_usage_time = np.asarray(gpu_usage_time)
 gpu_usage = np.asarray(gpu_usage)
-rows = zip(gpu_usage_time, gpu_usage)
+gpu_usage_completion = np.asarray(gpu_usage_completion)
+rows = zip(gpu_usage_time, gpu_usage, gpu_usage_completion)
 with open(gpu_usage_name, 'w') as f:
     writer = csv.writer(f)
     for row in rows:

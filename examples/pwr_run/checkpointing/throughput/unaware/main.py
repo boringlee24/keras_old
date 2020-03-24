@@ -14,6 +14,7 @@ import threading
 import _thread
 import signal
 from datetime import datetime
+import csv
 
 parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
@@ -31,6 +32,9 @@ job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
 for item in queue:
     JCT[str(item)] = 0
+completion = {}
+for item in queue:
+    completion[str(item)] = 0
 overhead = {} # initialize so that every job starts with 0s overhead time
 for item in queue:
     overhead[str(item)] = 0
@@ -63,6 +67,7 @@ for item in queue:
     V100_time[str(item)] = 0
 gpu_usage_time = [] # don't initialize this
 gpu_usage = []
+gpu_usage_completion = []
 
 speedup_dict = {}
 with open('speedup.json', 'r') as fp:
@@ -85,8 +90,8 @@ qualified_job = []
 pc_job = []
 
 K80_node = 'c2180'
-V100_node = 'd1020'
-host_node = 'c0168'
+V100_node = 'd1021'
+host_node = 'c0169'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -198,6 +203,7 @@ def thread_function():
                     global v100_job
                     global K80_time
                     global V100_time
+                    global completion
                     if 'param' in data_str:
                         pass
                     elif 'ckpt_qual' in data_str:
@@ -239,6 +245,11 @@ def thread_function():
                         job_name = data_str.split(' ')[0]
                         epoch_waste_time = data_str.split(' ')[2]
                         epoch_waste_dict[job_name] += int(epoch_waste_time)
+                    elif 'completion' in data_str: # 'job50 completion 0.33'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        completion_portion = float(data_str.split(' ')[2])
+                        completion[job] = completion_portion
                     if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
                         print('received ' + data_str)
                     connection.sendall(b'success')
@@ -317,6 +328,8 @@ while True:
     time_stamp = int(time.time() - queue_timer)
     gpu_usage_time.append(time_stamp)
     gpu_usage.append(usage)
+    total_completion = np.sum(list(completion.values()))
+    gpu_usage_completion.append(total_completion)
 
     ############### wait for next iteration
 
@@ -350,6 +363,7 @@ finish_name = 'finish.json'
 K80_time_name = testcase + '_K80_time.json'
 V100_time_name = testcase + '_V100_time.json'
 gpu_usage_name = testcase + '_gpu_usage.csv'
+completion_name = 'completion.json'
 
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
@@ -367,8 +381,16 @@ with open(K80_time_name, 'w') as fp3:
     json.dump(K80_time, fp3, sort_keys=True, indent=4)
 with open(V100_time_name, 'w') as fp3:
     json.dump(V100_time, fp3, sort_keys=True, indent=4)
+with open(completion_name, 'w') as fp1:
+   json.dump(completion, fp1, sort_keys=True, indent=4)
+
 gpu_usage_time = np.asarray(gpu_usage_time)
 gpu_usage = np.asarray(gpu_usage)
-np.savetxt(gpu_usage_name, (gpu_usage_time, gpu_usage), delimiter=',') 
+gpu_usage_completion = np.asarray(gpu_usage_completion)
+rows = zip(gpu_usage_time, gpu_usage, gpu_usage_completion)
+with open(gpu_usage_name, 'w') as f:
+    writer = csv.writer(f)
+    for row in rows:
+        writer.writerow(row)
 
 

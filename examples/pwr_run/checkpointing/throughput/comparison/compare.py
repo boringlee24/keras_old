@@ -31,6 +31,8 @@ with open('../final4/logs/final4_JCT.json', 'r') as fp:
     final4_only = json.load(fp)
 with open('../final5/logs/final5_JCT.json', 'r') as fp:
     final5_only = json.load(fp)
+with open('../final4_new/logs/final4_new_JCT.json', 'r') as fp:
+    final4_new_only = json.load(fp)
 
 oracle = []
 unaware = []
@@ -73,6 +75,7 @@ norm_final2_inverse = []
 norm_final3 = []
 norm_final4 = []
 norm_final5 = []
+norm_final4_new = []
 
 for i in range(len(unaware)):
     job = str(i+1)
@@ -87,6 +90,7 @@ for i in range(len(unaware)):
     norm_final3.append(round(unaware_only[job]/final3_only[job], 1))
     norm_final4.append(round(unaware_only[job]/final4_only[job], 1))
     norm_final5.append(round(unaware_only[job]/final5_only[job], 1))
+    norm_final4_new.append(round(unaware_only[job]/final4_new_only[job], 1))
 
 
 avg = np.mean(norm_oracle)

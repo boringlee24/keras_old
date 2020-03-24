@@ -98,7 +98,11 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 
 if args.resume:
     print('resume from checkpoint')
+    message = job_name + ' b_end'
+    send_signal.send(args.node, 10002, message)
     model = keras.models.load_model(save_file)
+    message = job_name + ' c_end'
+    send_signal.send(args.node, 10002, message)
 else:
     print('train from start')
     model = models.Sequential()
@@ -165,14 +169,36 @@ logdir = '/scratch/li.baol/tsrbrd_log/job_runs/' + model_type + '/' + job_name
 
 tensorboard_callback = TensorBoard(log_dir=logdir)#, update_freq='batch')
 
+first_epoch_start = 0
+
 class PrintEpoch(keras.callbacks.Callback):
     def on_epoch_begin(self, epoch, logs=None):
-        global current_epoch 
+        global current_epoch, first_epoch_start
         #remaining_epochs = epochs - epoch
         current_epoch = epoch
         print('current epoch ' + str(current_epoch))
         global epoch_begin_time
         epoch_begin_time = time.time()
+        if epoch == starting_epoch and args.resume:
+            first_epoch_start = time.time()
+            message = job_name + ' d_end'
+            send_signal.send(args.node, 10002, message)
+        elif epoch == starting_epoch:
+            first_epoch_start = time.time()           
+        if epoch == starting_epoch:
+            # send signal to indicate checkpoint is qualified
+            message = job_name + ' ckpt_qual'
+            send_signal.send(args.node, 10002, message)
+
+
+    def on_epoch_end(self, epoch, logs=None):
+        if epoch == starting_epoch:
+            first_epoch_time = int(time.time() - first_epoch_start)
+            message = job_name + ' 1st_epoch ' + str(first_epoch_time)
+            send_signal.send(args.node, 10002, message)
+        progress = round((epoch+1) / round(total_epochs/2), 2)
+        message = job_name + ' completion ' + str(progress)
+        send_signal.send(args.node, 10002, message)
 
 my_callback = PrintEpoch()
 
@@ -180,10 +206,6 @@ callbacks = [tensorboard_callback, my_callback]
  #[checkpoint, lr_reducer, lr_scheduler, tensorboard_callback]
 
 # Run training
-
-# send signal to indicate checkpoint is qualified
-message = job_name + ' ckpt_qual'
-send_signal.send(args.node, 10002, message)
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
