@@ -200,6 +200,9 @@ class PrintEpoch(keras.callbacks.Callback):
             first_epoch_time = int(time.time() - first_epoch_start)
             message = job_name + ' 1st_epoch ' + str(first_epoch_time)
             send_signal.send(args.node, 10002, message)
+        progress = round((epoch+1) / round(total_epochs/2), 2)
+        message = job_name + ' completion ' + str(progress)
+        send_signal.send(args.node, 10002, message)
 
 my_callback = PrintEpoch()
 
