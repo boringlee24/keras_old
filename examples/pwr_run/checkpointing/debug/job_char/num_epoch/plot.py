@@ -39,6 +39,8 @@ for i in range(50):
 
 with open('k80_time.json', 'w') as f:
     json.dump(k80_dict, f, indent=4)
+
+print(num_epoch)
 pdb.set_trace()
 
 x = np.arange(len(num_epoch)) + 1  # the label locations
