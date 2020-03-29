@@ -48,7 +48,7 @@ args_lr = 0.003
 epoch_begin_time = 0
 
 job_name = sys.argv[0].split('.')[0]
-save_files = '/scratch/li.baol/checkpoint_final4/' + job_name + '*'
+save_files = '/scratch/li.baol/checkpoint_final4_new2/' + job_name + '*'
 
 total_epochs = 95
 starting_epoch = 0
@@ -153,7 +153,7 @@ def terminateProcess(signalNumber, frame):
     # delete whatever checkpoint that already exists
     for f in glob.glob(save_files):
         os.remove(f)
-    model.save('/scratch/li.baol/checkpoint_final4/' + job_name + '_' + str(current_epoch) + '.h5')
+    model.save('/scratch/li.baol/checkpoint_final4_new2/' + job_name + '_' + str(current_epoch) + '.h5')
     print ('(SIGTERM) terminating the process')
 
     message = job_name + ' checkpoint'

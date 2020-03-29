@@ -56,6 +56,9 @@ for item in queue:
 d_start = {} # initialize this to 0 as well
 for item in queue:
     d_start[str(item)] = 0
+epoch_end_time = {}
+for item in queue:
+    epoch_end_time[str(item)] = 0
 
 ovhd_a = {} # {1: [10, 12, ...], 2: [xx]} 
 for item in queue:
@@ -143,9 +146,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2182', 'c2183']
-V100_node = ['d1003', 'd1004']
-host_node = 'c0174'
+K80_node = ['c2180', 'c2179']
+V100_node = ['d1009', 'd1002']
+host_node = 'c0226'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -193,7 +196,7 @@ def send_signal(node, cmd):
         while True:
             data = sock.recv(32)
             if 'success' in data.decode('utf-8'):
-                print('received {!r}'.format(data))
+#                print('received {!r}'.format(data))
                 break
             else:
                 print('waiting for success signal')
@@ -430,7 +433,7 @@ def thread_function():
                     global K80_time
                     global V100_time
                     global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
-                    global b_start, c_start, d_start, completion
+                    global b_start, c_start, d_start, completion, epoch_end_time
                     if 'ckpt_qual' in data_str:
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
@@ -498,8 +501,9 @@ def thread_function():
                         job = job_name.replace('job','')
                         completion_portion = float(data_str.split(' ')[2])
                         completion[job] = completion_portion
-                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
-                        print('received ' + data_str)
+                        epoch_end_time[job] = time.time()
+#                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+#                        print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
@@ -550,7 +554,7 @@ while True:
                 qualified_job.append(job)
                 print('job' + job + ' has been qualified for demotion')
                 time.sleep(3) # wait for run.sh to finish
-                x1, x3 = gpu_pwr.process_csv('job'+job)
+                x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / V100_epoch_time[job]
                 speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                 speedup_dict[job] = speedup_pred
@@ -623,6 +627,22 @@ while True:
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
             print('demoted jobs: ', demoted)
+
+        # make sure that epoch waste time of V100 demoted job doesn't exceed its 10% epoch time
+        for job_demote in demoted[:]:
+            if int(time.time() - epoch_end_time[job_demote] - INTERVAL) > 0.1 * V100_epoch_time[job_demote]:
+                demoted.remove(job_demote)
+                print('job ' + job_demote + ' demotion canceled because too much epoch waste time')
+                most_waste = 0
+                cancel_promote = ''
+                for job_promote in promoted[:]:
+                    if int(time.time() - epoch_end_time[job_promote]) > most_waste:
+                        most_waste = int(time.time() - epoch_end_time[job_promote])
+                        cancel_promote = job_promote
+                if cancel_promote in promoted:
+                    promoted.remove(cancel_promote)
+                    print('job ' + cancel_promote + ' promotion also canceled')
+
         # stop all promoted jobs on K80
         checkpoint_finish_check = []
         for gpu, job in K80_job.items():

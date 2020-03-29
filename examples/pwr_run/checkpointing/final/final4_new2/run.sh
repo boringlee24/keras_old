@@ -3,7 +3,9 @@
 
 JOB=$1  #"job1"
 GPU=$2
-DATA_PATH="/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/"
+TESTCASE=$3
+DATA_PATH="/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/${TESTCASE}/"
+mkdir -p $DATA_PATH
 
 # step 1: start power measurement
 # step 2: after measurement done, process data, write to power.json

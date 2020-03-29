@@ -2,8 +2,8 @@ import pandas
 import numpy as np
 import pdb
 
-def process_csv(job_name):
-    base_dir = "/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/"
+def process_csv(job_name, testcase):
+    base_dir = "/scratch/li.baol/GPU_pwr_meas/tensorflow/job_runs/" + testcase + '/'
     file_path = base_dir + job_name + '.csv'
     
     data = pandas.read_csv(file_path)

@@ -46,7 +46,7 @@ while True:
                 if 'measure' in data_str: # 'measure job20 gpu 3'
                     jobid = re.findall(r'\d+', data_str)[0]
                     gpuid = re.findall(r'\d+', data_str)[1]
-                    cmd = './run.sh job' + jobid + ' ' + gpuid
+                    cmd = './run.sh job' + jobid + ' ' + gpuid + ' ' + testcase
                     print('measuring power for job' + jobid + ' at gpu ' + gpuid)
                     meas_pid = subprocess.Popen([cmd], shell=True).pid
                     run_pid_dict['job'+jobid] = meas_pid

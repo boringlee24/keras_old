@@ -193,7 +193,7 @@ def send_signal(node, cmd):
         while True:
             data = sock.recv(32)
             if 'success' in data.decode('utf-8'):
-                print('received {!r}'.format(data))
+#                print('received {!r}'.format(data))
                 break
             else:
                 print('waiting for success signal')
@@ -235,7 +235,7 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_li
                 if job_demote in demotion_list:
                     for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                         if job_promote in promotion_list:
-                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
+                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0:
                                 demotion_list.remove(job_demote)
                                 promotion_list.remove(job_promote)
                                 break
@@ -282,7 +282,7 @@ def min_speedup_demotion(K80_job, demote_list):
             if job_demote in demotion_list:
                 for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                     if job_promote in promotion_list:
-                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
+                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0:
                             demotion_list.remove(job_demote)
                             promotion_list.remove(job_promote)
                             break
@@ -498,8 +498,8 @@ def thread_function():
                         job = job_name.replace('job','')
                         completion_portion = float(data_str.split(' ')[2])
                         completion[job] = completion_portion
-                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
-                        print('received ' + data_str)
+                    #if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                    #    print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
@@ -550,7 +550,7 @@ while True:
                 qualified_job.append(job)
                 print('job' + job + ' has been qualified for demotion')
                 time.sleep(3) # wait for run.sh to finish
-                x1, x3 = gpu_pwr.process_csv('job'+job)
+                x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / V100_epoch_time[job]
                 speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                 speedup_dict[job] = speedup_pred

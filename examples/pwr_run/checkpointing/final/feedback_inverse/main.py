@@ -168,7 +168,7 @@ def send_signal(node, cmd):
         while True:
             data = sock.recv(32)
             if 'success' in data.decode('utf-8'):
-                print('received {!r}'.format(data))
+#                print('received {!r}'.format(data))
                 break
             else:
                 print('waiting for success signal')
@@ -435,8 +435,8 @@ def thread_function():
                         job = job_name.replace('job','')
                         completion_portion = float(data_str.split(' ')[2])
                         completion[job] = completion_portion
-                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
-                        print('received ' + data_str)
+                    #if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
+                    #    print('received ' + data_str)
                     connection.sendall(b'success')
                     #time.sleep(5)
                 else:
