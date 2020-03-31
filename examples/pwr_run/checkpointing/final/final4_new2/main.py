@@ -147,8 +147,8 @@ step2_job = []
 pc_job = []
 
 K80_node = ['c2180', 'c2179']
-V100_node = ['d1009', 'd1002']
-host_node = 'c0226'
+V100_node = ['d1023', 'd1002']
+host_node = 'c0182'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -596,7 +596,7 @@ while True:
                 k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
                 v100_1st_ovhd = np.mean(v100_1st[job]) - V100_epoch_time[job]
                 demote_qualify_time = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / job_speedup
-                if int(time.time() - promote_start_time[job]) > demote_qualify_time:
+                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, np.mean(v100_1st[job])):
                     demote_list.append(job)
                     print('job' + job + 'qualified for demote for passing demote qualify time ' +
                     str(int(demote_qualify_time)))
@@ -618,7 +618,10 @@ while True:
                 for job in demoted:
                     if job in speedup_dict:
                         demoted_pool[job] = speedup_dict[job]
-                demoted = sorted(demoted_pool, key=demoted_pool.get, reverse=False)[:(len(promoted)+new_arrival-V100_free)]
+                if len(promoted) + new_arrival - V100_free > 0:
+                    demoted = sorted(demoted_pool, key=demoted_pool.get, reverse=False)[:(len(promoted)+new_arrival-V100_free)]
+                else:
+                    demoted = []
                 print('new demotion: ' + str(demoted))
 
         if len(promoted) > 0:
@@ -633,15 +636,22 @@ while True:
             if int(time.time() - epoch_end_time[job_demote] - INTERVAL) > 0.1 * V100_epoch_time[job_demote]:
                 demoted.remove(job_demote)
                 print('job ' + job_demote + ' demotion canceled because too much epoch waste time')
+                print('V100_epoch_time is ' + str(V100_epoch_time[job_demote]) + ', time diff is ' + str(int(time.time()
+                - epoch_end_time[job_demote])))
                 most_waste = 0
                 cancel_promote = ''
                 for job_promote in promoted[:]:
                     if int(time.time() - epoch_end_time[job_promote]) > most_waste:
                         most_waste = int(time.time() - epoch_end_time[job_promote])
                         cancel_promote = job_promote
+                if len(promoted) > 0 and cancel_promote == '':
+                    print('weird situation, no job in promoted get canceled')
+                    pdb.set_trace()
+                    cancel_promote = promoted[0]
                 if cancel_promote in promoted:
                     promoted.remove(cancel_promote)
                     print('job ' + cancel_promote + ' promotion also canceled')
+
 
         # stop all promoted jobs on K80
         checkpoint_finish_check = []

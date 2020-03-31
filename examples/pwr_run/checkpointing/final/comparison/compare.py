@@ -16,7 +16,7 @@ with open('../random/logs/random_JCT.json', 'r') as fp:
 with open('../feedback_inverse/logs/feedback_inverse_JCT.json', 'r') as fp:
     feedback_inverse_only = json.load(fp)
 with open('../final4_new/logs_0.05thres/final4_new_JCT.json', 'r') as fp:
-    final4_new_only = json.load(fp)
+    scheme_new_only = json.load(fp)
 with open('v100_only_JCT.json', 'r') as fp:
     v100_only = json.load(fp)
 with open('k80_only_JCT.json', 'r') as fp:
@@ -34,7 +34,7 @@ final2_inverse = []
 final3 = []
 final4 = []
 final5 = []
-final4_new = []
+scheme_new = []
 k80 = []
 v100 = []
 
@@ -52,7 +52,7 @@ for i in range(len(unaware_only)-1):
 #    final3.append(final3_only[job])
 #    final4.append(final4_only[job])
 #    final5.append(final5_only[job])
-    final4_new.append(final4_new_only[job])
+    scheme_new.append(scheme_new_only[job])
     if i < 50:
         k80.append(k80_only[job])
         v100.append(v100_only[job])
@@ -65,7 +65,7 @@ for i in range(len(unaware_only)-1):
 unaware = np.asarray(unaware)
 random = np.asarray(random)
 feedback_inverse = np.asarray(feedback_inverse)
-final4_new = np.asarray(final4_new)
+scheme_new = np.asarray(scheme_new)
 
 cols = zip(unaware)
 with open('JCT/unaware_jct.csv', 'w') as f:
@@ -82,8 +82,8 @@ with open('JCT/feedback_inverse_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(final4_new)
-with open('JCT/final4_new_jct.csv', 'w') as f:
+cols = zip(scheme_new)
+with open('JCT/scheme_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -111,16 +111,16 @@ norm_final2_inverse = []
 norm_final3 = []
 norm_final4 = []
 norm_final5 = []
-norm_final4_new = []
+norm_scheme_new = []
 
 v100_unaware = []
 v100_random = []
 v100_feedback_inverse = []
-v100_final4_new = []
+v100_scheme_new = []
 k80_unaware = []
 k80_random = []
 k80_feedback_inverse = []
-k80_final4_new = []
+k80_scheme_new = []
 
 for i in range(len(unaware)):
     job = str(i+1)
@@ -135,17 +135,17 @@ for i in range(len(unaware)):
 #    norm_final3.append(round(unaware_only[job]/final3_only[job], 2))
 #    norm_final4.append(round(unaware_only[job]/final4_only[job], 2))
 #    norm_final5.append(round(unaware_only[job]/final5_only[job], 2))
-    norm_final4_new.append(round(unaware_only[job]/final4_new_only[job], 2))
+    norm_scheme_new.append(round(unaware_only[job]/scheme_new_only[job], 2))
 
     if i < 50:
         v100_unaware.append(round(v100_only[job]/unaware_only[job], 2))   
         v100_random.append(round(v100_only[job]/random_only[job], 2))
         v100_feedback_inverse.append(round(v100_only[job]/feedback_inverse_only[job], 2))
-        v100_final4_new.append(round(v100_only[job]/final4_new_only[job], 2))
+        v100_scheme_new.append(round(v100_only[job]/scheme_new_only[job], 2))
         k80_unaware.append(round(k80_only[job]/unaware_only[job], 2))   
         k80_random.append(round(k80_only[job]/random_only[job], 2))
         k80_feedback_inverse.append(round(k80_only[job]/feedback_inverse_only[job], 2))
-        k80_final4_new.append(round(k80_only[job]/final4_new_only[job], 2))
+        k80_scheme_new.append(round(k80_only[job]/scheme_new_only[job], 2))
     elif i < 100:
         joob = str(i+1-50)
         v100_joob = v100_only[joob]
@@ -153,11 +153,11 @@ for i in range(len(unaware)):
         v100_unaware.append(round(v100_joob/unaware_only[job], 2))   
         v100_random.append(round(v100_joob/random_only[job], 2))
         v100_feedback_inverse.append(round(v100_joob/feedback_inverse_only[job], 2))
-        v100_final4_new.append(round(v100_joob/final4_new_only[job], 2))
+        v100_scheme_new.append(round(v100_joob/scheme_new_only[job], 2))
         k80_unaware.append(round(k80_joob/unaware_only[job], 2))   
         k80_random.append(round(k80_joob/random_only[job], 2))
         k80_feedback_inverse.append(round(k80_joob/feedback_inverse_only[job], 2))
-        k80_final4_new.append(round(k80_joob/final4_new_only[job], 2))
+        k80_scheme_new.append(round(k80_joob/scheme_new_only[job], 2))
 
 cols = zip(norm_random)
 with open('norm_JCT/random_jct.csv', 'w') as f:
@@ -169,8 +169,8 @@ with open('norm_JCT/feedback_inverse_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(norm_final4_new)
-with open('norm_JCT/final4_new_jct.csv', 'w') as f:
+cols = zip(norm_scheme_new)
+with open('norm_JCT/scheme_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -190,8 +190,8 @@ with open('v100_JCT/feedback_inverse_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(v100_final4_new)
-with open('v100_JCT/final4_new_jct.csv', 'w') as f:
+cols = zip(v100_scheme_new)
+with open('v100_JCT/scheme_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -210,8 +210,8 @@ with open('k80_JCT/feedback_inverse_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(k80_final4_new)
-with open('k80_JCT/final4_new_jct.csv', 'w') as f:
+cols = zip(k80_scheme_new)
+with open('k80_JCT/scheme_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -225,23 +225,23 @@ with open('../random/logs/random_queue_delay.json', 'r') as fp:
 with open('../feedback_inverse/logs/feedback_inverse_queue_delay.json', 'r') as fp:
     feedback_inverse_only = json.load(fp)
 with open('../final4_new/logs_0.05thres/final4_new_queue_delay.json', 'r') as fp:
-    final4_new_only = json.load(fp)
+    scheme_new_only = json.load(fp)
 
 unaware = []
 random = []
 feedback_inverse = []
-final4_new = []
+scheme_new = []
 for i in range(len(unaware_only)-1):
     job = str(i+1)
     unaware.append(unaware_only[job])
     random.append(random_only[job])
     feedback_inverse.append(feedback_inverse_only[job])
-    final4_new.append(final4_new_only[job])
+    scheme_new.append(scheme_new_only[job])
 
 unaware = np.asarray(unaware)
 random = np.asarray(random)
 feedback_inverse = np.asarray(feedback_inverse)
-final4_new = np.asarray(final4_new)
+scheme_new = np.asarray(scheme_new)
 
 cols = zip(unaware)
 with open('queue_delay/unaware_queue_delay.csv', 'w') as f:
@@ -258,8 +258,8 @@ with open('queue_delay/feedback_inverse_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(final4_new)
-with open('queue_delay/final4_new_queue_delay.csv', 'w') as f:
+cols = zip(scheme_new)
+with open('queue_delay/scheme_new_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)

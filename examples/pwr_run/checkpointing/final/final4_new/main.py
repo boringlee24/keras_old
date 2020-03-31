@@ -145,7 +145,7 @@ pc_job = []
 
 K80_node = ['c2182', 'c2183']
 V100_node = ['d1003', 'd1004']
-host_node = 'c0174'
+host_node = 'c0172'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -235,7 +235,7 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_li
                 if job_demote in demotion_list:
                     for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                         if job_promote in promotion_list:
-                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0:
+                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
                                 demotion_list.remove(job_demote)
                                 promotion_list.remove(job_promote)
                                 break
@@ -282,7 +282,7 @@ def min_speedup_demotion(K80_job, demote_list):
             if job_demote in demotion_list:
                 for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                     if job_promote in promotion_list:
-                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0:
+                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
                             demotion_list.remove(job_demote)
                             promotion_list.remove(job_promote)
                             break
@@ -592,7 +592,7 @@ while True:
                 k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
                 v100_1st_ovhd = np.mean(v100_1st[job]) - V100_epoch_time[job]
                 demote_qualify_time = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / job_speedup
-                if int(time.time() - promote_start_time[job]) > demote_qualify_time:
+                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, np.mean(v100_1st[job])):
                     demote_list.append(job)
                     print('job' + job + 'qualified for demote for passing demote qualify time ' +
                     str(int(demote_qualify_time)))
@@ -614,7 +614,10 @@ while True:
                 for job in demoted:
                     if job in speedup_dict:
                         demoted_pool[job] = speedup_dict[job]
-                demoted = sorted(demoted_pool, key=demoted_pool.get, reverse=False)[:(len(promoted)+new_arrival-V100_free)]
+                if len(promoted) + new_arrival - V100_free > 0:
+                    demoted = sorted(demoted_pool, key=demoted_pool.get, reverse=False)[:(len(promoted)+new_arrival-V100_free)]
+                else:
+                    demoted = []
                 print('new demotion: ' + str(demoted))
 
         if len(promoted) > 0:
