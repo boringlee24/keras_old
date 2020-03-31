@@ -1,0 +1,23 @@
+RMSE value for k=  1 is: 1.385591236695654
+RMSE value for k=  2 is: 1.2952687472705195
+RMSE value for k=  3 is: 1.2138434594820322
+RMSE value for k=  4 is: 1.1771436433197362
+RMSE value for k=  5 is: 1.2088104452013448
+RMSE value for k=  6 is: 1.1747524519217296
+RMSE value for k=  7 is: 1.4100427817476133
+RMSE value for k=  8 is: 1.4547687096283415
+RMSE value for k=  9 is: 1.6729117561118105
+RMSE value for k=  10 is: 1.8602257655574397
+
+below is for abs(pred - y_test) / y_test * 100
+RMSE value for k=  1 is: 1.9541826874379198
+RMSE value for k=  2 is: 1.719461791906193
+RMSE value for k=  3 is: 1.688436850182756
+RMSE value for k=  4 is: 1.6280232425442247
+RMSE value for k=  5 is: 1.7497649732763463
+RMSE value for k=  6 is: 1.7580966494246488
+RMSE value for k=  7 is: 1.7786363507374134
+RMSE value for k=  8 is: 1.6896918086491817
+RMSE value for k=  9 is: 1.7968073698618525
+RMSE value for k=  10 is: 2.0364590422888695
+
