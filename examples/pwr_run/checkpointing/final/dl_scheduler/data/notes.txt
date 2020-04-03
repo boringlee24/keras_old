@@ -1,0 +1,9 @@
+baseline - baseline, unaware
+baseline+ - random promotion
+scheme - proposed scheme
+feedback - measure speedup for every job
+epoch_boundary - on top of proposed, nullify promotion/demotion pair if V100 job to be demoted has too much epoch waste time compare to its epoch time. Just for exploration purpose, this seems to make the scheme worse
+start_on_both - start on both V100 and K80 instead of V100 only in proposed
+no_safeguard - remove safeguard time from proposed
+no_threshold - remove promotion/demotion pair speedup difference restriction
+predict_error - added Gaussian noise to mode speedup prediction

@@ -1,1 +1,0 @@
-time, number of GPUs used and number of job completion for each scheme

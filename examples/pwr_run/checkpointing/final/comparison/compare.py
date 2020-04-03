@@ -146,6 +146,7 @@ with open('JCT/v100_jct.csv', 'w') as f:
 #########################################
 
 norm_oracle = []
+norm_baseline = []
 norm_baseline_plus = []
 norm_feedback = []
 norm_final1 = []
@@ -185,6 +186,7 @@ k80_predict_error = []
 
 for i in range(len(baseline)):
     job = str(i+1)
+    norm_baseline.append(round(baseline_only[job]/baseline_only[job], 2))
     norm_baseline_plus.append(round(baseline_only[job]/baseline_plus_only[job], 2))
     norm_feedback.append(round(baseline_only[job]/feedback_only[job], 2))
     norm_scheme.append(round(baseline_only[job]/scheme_only[job], 2))
@@ -239,6 +241,12 @@ for i in range(len(baseline)):
         k80_no_threshold.append(round(k80_joob/no_threshold_only[job], 2))
         k80_predict_error.append(round(k80_joob/predict_error_only[job], 2))
 
+pdb.set_trace()
+cols = zip(norm_baseline)
+with open('norm_JCT/baseline_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
 cols = zip(norm_baseline_plus)
 with open('norm_JCT/baseline_plus_jct.csv', 'w') as f:
     writer = csv.writer(f)
