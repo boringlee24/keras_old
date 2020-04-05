@@ -169,18 +169,40 @@ def V100_LUT(gpu):
     return real_node, real_gpu
 
 ######################### do a regression fit ########################
-with open('v100_data/x_data.json') as f:
-    x_train = json.load(f)
-with open('v100_data/y_data.json') as f:
+with open('v100_data/x1_data.json') as f:
+    x1_v100 = json.load(f)
+with open('v100_data/x2_data.json') as f:
+    x2_v100 = json.load(f)
+with open('v100_data/x3_data.json') as f:
+    x3_v100 = json.load(f)
+x1_norm = [(i - min(x1_v100)) / (max(x1_v100) - min(x1_v100)) for i in x1_v100]
+x2_norm = [(i - min(x2_v100)) / (max(x2_v100) - min(x2_v100)) for i in x2_v100]
+x3_norm = [(i - min(x3_v100)) / (max(x3_v100) - min(x3_v100)) for i in x3_v100]
+# create training data
+x_train = []
+for i in range(len(x1_norm)):
+    x_train.append([x1_norm[i], x2_norm[i], x3_norm[i]])
+with open('y_data.json') as f:
     y_train = json.load(f)
-model_V100 = neighbors.KNeighborsRegressor(n_neighbors = 4, weights='distance')
+model_V100 = neighbors.KNeighborsRegressor(n_neighbors = 3, weights='distance')
 model_V100.fit(x_train, y_train)
 
-with open('k80_data/x_data.json') as f:
-    x_train = json.load(f)
-with open('k80_data/y_data.json') as f:
+with open('k80_data/x1_data.json') as f:
+    x1_k80 = json.load(f)
+with open('k80_data/x2_data.json') as f:
+    x2_k80 = json.load(f)
+with open('k80_data/x3_data.json') as f:
+    x3_k80 = json.load(f)
+x1_norm = [(i - min(x1_k80)) / (max(x1_k80) - min(x1_k80)) for i in x1_k80]
+x2_norm = [(i - min(x2_k80)) / (max(x2_k80) - min(x2_k80)) for i in x2_k80]
+x3_norm = [(i - min(x3_k80)) / (max(x3_k80) - min(x3_k80)) for i in x3_k80]
+# create training k80
+x_train = []
+for i in range(len(x1_norm)):
+    x_train.append([x1_norm[i], x2_norm[i], x3_norm[i]])
+with open('y_data.json') as f:
     y_train = json.load(f)
-model_K80 = neighbors.KNeighborsRegressor(n_neighbors = 2, weights='distance')
+model_K80 = neighbors.KNeighborsRegressor(n_neighbors = 3, weights='distance')
 model_K80.fit(x_train, y_train)
 
 ####################################################################
@@ -536,7 +558,12 @@ while True:
                 print('job ' + job + ' has been qualified for demotion to K80')
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
-                x2 = 3600 / V100_epoch_time[job]
+                x2 = 3600 / V100_epoch_time[job] # num of epochs per hr
+                # preprocess the data
+                x1 = (x1 - min(x1_v100)) / (max(x1_v100) - min(x1_v100))
+                x2 = (x2 - min(x2_v100)) / (max(x2_v100) - min(x2_v100))
+                x3 = (x3 - min(x3_v100)) / (max(x3_v100) - min(x3_v100))
+
                 speedup_pred = model_V100.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                 speedup_dict[job] = speedup_pred
                 predict_dict[job] = speedup_pred
@@ -554,6 +581,11 @@ while True:
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / K80_epoch_time[job]
+                # preprocess the data
+                x1 = (x1 - min(x1_k80)) / (max(x1_k80) - min(x1_k80))
+                x2 = (x2 - min(x2_k80)) / (max(x2_k80) - min(x2_k80))
+                x3 = (x3 - min(x3_k80)) / (max(x3_k80) - min(x3_k80))
+
                 speedup_pred = model_K80.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                 speedup_dict[job] = speedup_pred
                 predict_dict[job] = speedup_pred

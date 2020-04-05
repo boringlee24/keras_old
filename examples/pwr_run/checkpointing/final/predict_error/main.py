@@ -165,11 +165,26 @@ def V100_LUT(gpu):
     return real_node, real_gpu
 
 ######################### do a regression fit ########################
-with open('x_data.json') as f:
-    x_train = json.load(f)
+with open('x1_data.json') as f:
+    x1_data = json.load(f)
+with open('x2_data.json') as f:
+    x2_data = json.load(f)
+with open('x3_data.json') as f:
+    x3_data = json.load(f)
+
+x1_norm = [(i - min(x1_data)) / (max(x1_data) - min(x1_data)) for i in x1_data]
+x2_norm = [(i - min(x2_data)) / (max(x2_data) - min(x2_data)) for i in x2_data]
+x3_norm = [(i - min(x3_data)) / (max(x3_data) - min(x3_data)) for i in x3_data]
+
+# create training data
+x_train = []
+for i in range(len(x1_norm)):
+    x_train.append([x1_norm[i], x2_norm[i], x3_norm[i]])
+
 with open('y_data.json') as f:
     y_train = json.load(f)
-model = neighbors.KNeighborsRegressor(n_neighbors = 4, weights='distance')
+
+model = neighbors.KNeighborsRegressor(n_neighbors = 3, weights='distance')
 model.fit(x_train, y_train)
 
 ####################################################################
@@ -552,6 +567,11 @@ while True:
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / V100_epoch_time[job]
+                # preprocess the data
+                x1 = (x1 - min(x1_data)) / (max(x1_data) - min(x1_data))
+                x2 = (x2 - min(x2_data)) / (max(x2_data) - min(x2_data))
+                x3 = (x3 - min(x3_data)) / (max(x3_data) - min(x3_data))
+
                 speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                 noise = np.random.normal(0, 0.2)
                 speedup_pred += noise
