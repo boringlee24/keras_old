@@ -225,7 +225,7 @@ def thread_function():
                     global K80_start_time
                     global V100_start_time
                     global K80_job
-                    global v100_job
+                    global V100_job
                     global K80_time
                     global V100_time
                     global completion

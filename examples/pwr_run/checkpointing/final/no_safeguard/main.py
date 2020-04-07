@@ -143,9 +143,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2180', 'c2179']
-V100_node = ['d1023', 'd1002']
-host_node = 'c0182'
+K80_node = ['c2179', 'c2183']
+V100_node = ['d1020', 'd1018']
+host_node = 'c0191'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -441,7 +441,7 @@ def thread_function():
                     global K80_start_time
                     global V100_start_time, promote_start_time
                     global K80_job
-                    global v100_job
+                    global V100_job
                     global K80_time
                     global V100_time
                     global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
@@ -567,11 +567,24 @@ while True:
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / V100_epoch_time[job]
+                #TODO
+                if job == '89' or job == '95':
+                    print('original meas for job'+job)
+                    print('x1 = '+str(x1))
+                    print('x2 = '+str(x2))
+                    print('x3 = '+str(x3))
+
                 # preprocess the data
                 x1 = (x1 - min(x1_data)) / (max(x1_data) - min(x1_data))
                 x2 = (x2 - min(x2_data)) / (max(x2_data) - min(x2_data))
                 x3 = (x3 - min(x3_data)) / (max(x3_data) - min(x3_data))
-
+                #TODO
+                if job == '89' or job == '95':
+                    print('new data for job'+job)
+                    print('x1 = '+str(x1))
+                    print('x2 = '+str(x2))
+                    print('x3 = '+str(x3))
+                    
                 speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
                 speedup_dict[job] = speedup_pred
                 predict_dict[job] = speedup_pred
@@ -772,7 +785,8 @@ while True:
     if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
         print('all jobs are finished!')
         break
-
+    if int(time.time() - queue_timer) > 28800:
+        pdb.set_trace()
 
 # get average JCT
 average_JCT = np.average(list(JCT.values()))

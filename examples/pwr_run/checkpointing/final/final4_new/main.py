@@ -144,8 +144,8 @@ step2_job = []
 pc_job = []
 
 K80_node = ['c2179', 'c2183']
-V100_node = ['d1017', 'd1018']
-host_node = 'c0229'
+V100_node = ['d1020', 'd1018']
+host_node = 'c0191'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -441,7 +441,7 @@ def thread_function():
                     global K80_start_time
                     global V100_start_time, promote_start_time
                     global K80_job
-                    global v100_job
+                    global V100_job
                     global K80_time
                     global V100_time
                     global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
