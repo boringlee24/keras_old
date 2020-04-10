@@ -128,7 +128,7 @@ qualified_job = []
 K80_node = ['c2182']
 P100_node = ['c2189']
 V100_node = ['d1003']
-host_node = 'c0174'
+host_node = 'c0217'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -451,7 +451,7 @@ while True:
     P100_promote_list = list(set(qualified_job).intersection(list(P100_job.values())))
     demote_list = list(set(list(V100_job.values())).intersection(new_pool))
 
-    if len(promote_list) > 0:
+    if len(K80_promote_list) > 0 or len(P100_promote_list) > 0:
         K80_promoted, P100_promoted, K80_demoted, P100_demoted = random_promotion(K80_free, P100_free, V100_free,
         K80_promote_list, P100_promote_list, demote_list)
         total_promoted = list(set(K80_promoted).union(P100_promoted)) 
@@ -477,7 +477,7 @@ while True:
                     checkpoint_finish_check.append(job)
                 K80_job[gpu] = 'idle'
                 K80_used -= 1
-         for gpu, job in P100_job.items():
+        for gpu, job in P100_job.items():
             if job in P100_promoted:
                 if job not in new_pool: # don't do checkpointing for new jobs
                     real_node, real_gpu = P100_LUT(gpu)
