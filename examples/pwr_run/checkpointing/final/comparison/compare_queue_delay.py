@@ -15,8 +15,8 @@ with open('../feedback_inverse/logs/feedback_inverse_queue_delay.json', 'r') as 
     feedback_only = json.load(fp)
 with open('../final4_new/logs/final4_new_queue_delay.json', 'r') as fp:
     scheme_only = json.load(fp)
-with open('../final4_new2/logs/final4_new2_queue_delay.json', 'r') as fp:
-    epoch_boundary_only = json.load(fp)
+#with open('../final4_new2/logs/final4_new2_queue_delay.json', 'r') as fp:
+#    epoch_boundary_only = json.load(fp)
 with open('../final5/logs/final5_queue_delay.json', 'r') as fp:
     start_on_both_only = json.load(fp)
 with open('../no_safeguard/logs/no_safeguard_queue_delay.json', 'r') as fp:
@@ -30,7 +30,7 @@ baseline = []
 baseline_plus = []
 feedback = []
 scheme = []
-epoch_boundary = []
+#epoch_boundary = []
 start_on_both = []
 no_safeguard = []
 no_threshold = []
@@ -42,7 +42,7 @@ for i in range(len(baseline_only)-1):
     baseline_plus.append(baseline_plus_only[job])
     feedback.append(feedback_only[job])
     scheme.append(scheme_only[job])
-    epoch_boundary.append(epoch_boundary_only[job])
+#    epoch_boundary.append(epoch_boundary_only[job])
     start_on_both.append(start_on_both_only[job])
     no_safeguard.append(no_safeguard_only[job])
     no_threshold.append(no_threshold_only[job])
@@ -52,7 +52,7 @@ baseline = np.asarray(baseline)
 baseline_plus = np.asarray(baseline_plus)
 feedback = np.asarray(feedback)
 scheme = np.asarray(scheme)
-epoch_boundary = np.asarray(epoch_boundary)
+#epoch_boundary = np.asarray(epoch_boundary)
 start_on_both = np.asarray(start_on_both)
 no_safeguard = np.asarray(no_safeguard)
 no_threshold = np.asarray(no_threshold)
@@ -78,11 +78,11 @@ with open('queue_delay/scheme_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(epoch_boundary)
-with open('queue_delay/epoch_boundary_queue_delay.csv', 'w') as f:
-    writer = csv.writer(f)
-    for col in cols:
-        writer.writerow(col)
+#cols = zip(epoch_boundary)
+#with open('queue_delay/epoch_boundary_queue_delay.csv', 'w') as f:
+#    writer = csv.writer(f)
+#    for col in cols:
+#        writer.writerow(col)
 cols = zip(start_on_both)
 with open('queue_delay/start_on_both_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)

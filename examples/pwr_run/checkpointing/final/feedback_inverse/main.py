@@ -128,9 +128,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2180', 'c2179']
-V100_node = ['d1009', 'd1002']
-host_node = 'c0193'
+K80_node = ['c2179', 'c2183']
+V100_node = ['d1020', 'd1018']
+host_node = 'c0177'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -185,7 +185,7 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, force_dem
     global speedup_dict
     if K80_vacant >= num_demote: # if more vacant K80s than demote jobs, always demote
         # selectively promote among active V100 jobs and promote list jobs
-        V100_qual = list(set(list(V100_job.values())) - set(force_demote))
+        V100_qual = list(set(list(V100_job.values())).difference(force_demote).intersection(qualified_job))
         if 'idle' in V100_qual:
             V100_qual.remove('idle')
         V100_pool = list(set(V100_qual).union(promote_list))       

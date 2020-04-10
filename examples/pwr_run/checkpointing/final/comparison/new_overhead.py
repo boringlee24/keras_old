@@ -75,6 +75,9 @@ for i in range(100):
         k80_epoch_time = k80_epoch[joob]
         v100_epoch_time = v100_epoch[joob]
 
+    if job == '94' or job == '95':
+        pdb.set_trace()
+
     k80_1st = feedback_k80_1st[job]
     if len(k80_1st) == 0:
         k80_waste = 0
@@ -87,9 +90,13 @@ for i in range(100):
     elif len(v100_1st) > 1:
         v100_1st.pop(0)
         v100_waste = np.sum(v100_1st) - v100_epoch_time * len(v100_1st)
+    elif len(v100_1st) == 0:
+        print('error, uncollected v100 1st epoch time')
     feedback_V100_time[job] -= v100_waste
     feedback_overhead[job] += v100_waste + k80_waste 
+    
 
+    
     k80_1st = scheme_k80_1st[job]
     if len(k80_1st) == 0:
         k80_waste = 0
@@ -133,7 +140,13 @@ for i in range(100):
         v100_1st.pop(0)
         v100_waste = np.sum(v100_1st) - v100_epoch_time * len(v100_1st)
     no_safeguard_V100_time[job] -= v100_waste
-    no_safeguard_overhead[job] += v100_waste + k80_waste 
+    no_safeguard_overhead[job] += v100_waste + k80_waste
+
+# remove average number
+feedback_overhead.pop('average')
+scheme_overhead.pop('average')
+no_threshold_overhead.pop('average')
+no_safeguard_overhead.pop('average')
 
 average = np.mean(list(feedback_overhead.values()))
 print('new feedback average', str(average))

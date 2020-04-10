@@ -17,8 +17,8 @@ with open('../feedback_inverse/logs/feedback_inverse_JCT.json', 'r') as fp:
     feedback_only = json.load(fp)
 with open('../final4_new/logs/final4_new_JCT.json', 'r') as fp:
     scheme_only = json.load(fp)
-with open('../final4_new2/logs/final4_new2_JCT.json', 'r') as fp:
-    epoch_boundary_only = json.load(fp)
+##with open('../final4_new2/logs/final4_new2_JCT.json', 'r') as fp:
+##    epoch_boundary_only = json.load(fp)
 with open('../final5/logs/final5_JCT.json', 'r') as fp:
     start_on_both_only = json.load(fp)
 with open('../no_safeguard/logs/no_safeguard_JCT.json', 'r') as fp:
@@ -46,7 +46,7 @@ final3 = []
 final4 = []
 final5 = []
 scheme = []
-epoch_boundary = []
+#epoch_boundary = []
 start_on_both = []
 no_safeguard = []
 no_threshold = []
@@ -61,7 +61,7 @@ for i in range(len(baseline_only)-1):
     baseline_plus.append(baseline_plus_only[job])
     feedback.append(feedback_only[job])
     scheme.append(scheme_only[job])
-    epoch_boundary.append(epoch_boundary_only[job])
+    #epoch_boundary.append(epoch_boundary_only[job])
     start_on_both.append(start_on_both_only[job])
     no_safeguard.append(no_safeguard_only[job])
     no_threshold.append(no_threshold_only[job])
@@ -80,7 +80,7 @@ baseline = np.asarray(baseline)
 baseline_plus = np.asarray(baseline_plus)
 feedback = np.asarray(feedback)
 scheme = np.asarray(scheme)
-epoch_boundary = np.asarray(epoch_boundary)
+#epoch_boundary = np.asarray(epoch_boundary)
 start_on_both = np.asarray(start_on_both)
 no_safeguard = np.asarray(no_safeguard)
 no_threshold = np.asarray(no_threshold)
@@ -106,11 +106,11 @@ with open('JCT/scheme_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(epoch_boundary)
-with open('JCT/epoch_boundary_jct.csv', 'w') as f:
-    writer = csv.writer(f)
-    for col in cols:
-        writer.writerow(col)
+##cols = zip(epoch_boundary)
+##with open('JCT/epoch_boundary_jct.csv', 'w') as f:
+##    writer = csv.writer(f)
+##    for col in cols:
+##        writer.writerow(col)
 cols = zip(start_on_both)
 with open('JCT/start_on_both_jct.csv', 'w') as f:
     writer = csv.writer(f)
@@ -158,7 +158,7 @@ norm_final3 = []
 norm_final4 = []
 norm_final5 = []
 norm_scheme = []
-norm_epoch_boundary = []
+#norm_epoch_boundary = []
 norm_start_on_both = []
 norm_no_safeguard = []
 norm_no_threshold = []
@@ -168,7 +168,7 @@ v100_baseline = []
 v100_baseline_plus = []
 v100_feedback = []
 v100_scheme = []
-v100_epoch_boundary = []
+#v100_epoch_boundary = []
 v100_start_on_both = []
 v100_no_safeguard = []
 v100_no_threshold = []
@@ -178,7 +178,7 @@ k80_baseline = []
 k80_baseline_plus = []
 k80_feedback = []
 k80_scheme = []
-k80_epoch_boundary = []
+#k80_epoch_boundary = []
 k80_start_on_both = []
 k80_no_safeguard = []
 k80_no_threshold = []
@@ -190,7 +190,7 @@ for i in range(len(baseline)):
     norm_baseline_plus.append(round(baseline_only[job]/baseline_plus_only[job], 2))
     norm_feedback.append(round(baseline_only[job]/feedback_only[job], 2))
     norm_scheme.append(round(baseline_only[job]/scheme_only[job], 2))
-    norm_epoch_boundary.append(round(baseline_only[job]/epoch_boundary_only[job], 2))
+#    norm_epoch_boundary.append(round(baseline_only[job]/epoch_boundary_only[job], 2))
     norm_start_on_both.append(round(baseline_only[job]/start_on_both_only[job], 2))
     norm_no_safeguard.append(round(baseline_only[job]/no_safeguard_only[job], 2))
     norm_no_threshold.append(round(baseline_only[job]/no_threshold_only[job], 2))
@@ -201,7 +201,7 @@ for i in range(len(baseline)):
         v100_baseline_plus.append(round(v100_only[job]/baseline_plus_only[job], 2))
         v100_feedback.append(round(v100_only[job]/feedback_only[job], 2))
         v100_scheme.append(round(v100_only[job]/scheme_only[job], 2))
-        v100_epoch_boundary.append(round(v100_only[job]/epoch_boundary_only[job], 2))
+#        v100_epoch_boundary.append(round(v100_only[job]/epoch_boundary_only[job], 2))
         v100_start_on_both.append(round(v100_only[job]/start_on_both_only[job], 2))
         v100_no_safeguard.append(round(v100_only[job]/no_safeguard_only[job], 2))
         v100_no_threshold.append(round(v100_only[job]/no_threshold_only[job], 2))
@@ -211,7 +211,7 @@ for i in range(len(baseline)):
         k80_baseline_plus.append(round(k80_only[job]/baseline_plus_only[job], 2))
         k80_feedback.append(round(k80_only[job]/feedback_only[job], 2))
         k80_scheme.append(round(k80_only[job]/scheme_only[job], 2))
-        k80_epoch_boundary.append(round(k80_only[job]/epoch_boundary_only[job], 2))
+#        k80_epoch_boundary.append(round(k80_only[job]/epoch_boundary_only[job], 2))
         k80_start_on_both.append(round(k80_only[job]/start_on_both_only[job], 2))
         k80_no_safeguard.append(round(k80_only[job]/no_safeguard_only[job], 2))
         k80_no_threshold.append(round(k80_only[job]/no_threshold_only[job], 2))
@@ -225,7 +225,7 @@ for i in range(len(baseline)):
         v100_baseline_plus.append(round(v100_joob/baseline_plus_only[job], 2))
         v100_feedback.append(round(v100_joob/feedback_only[job], 2))
         v100_scheme.append(round(v100_joob/scheme_only[job], 2))
-        v100_epoch_boundary.append(round(v100_joob/epoch_boundary_only[job], 2))
+#        v100_epoch_boundary.append(round(v100_joob/epoch_boundary_only[job], 2))
         v100_start_on_both.append(round(v100_joob/start_on_both_only[job], 2))
         v100_no_safeguard.append(round(v100_joob/no_safeguard_only[job], 2))
         v100_no_threshold.append(round(v100_joob/no_threshold_only[job], 2))
@@ -235,13 +235,13 @@ for i in range(len(baseline)):
         k80_baseline_plus.append(round(k80_joob/baseline_plus_only[job], 2))
         k80_feedback.append(round(k80_joob/feedback_only[job], 2))
         k80_scheme.append(round(k80_joob/scheme_only[job], 2))
-        k80_epoch_boundary.append(round(k80_joob/epoch_boundary_only[job], 2))
+#        k80_epoch_boundary.append(round(k80_joob/epoch_boundary_only[job], 2))
         k80_start_on_both.append(round(k80_joob/start_on_both_only[job], 2))
         k80_no_safeguard.append(round(k80_joob/no_safeguard_only[job], 2))
         k80_no_threshold.append(round(k80_joob/no_threshold_only[job], 2))
         k80_predict_error.append(round(k80_joob/predict_error_only[job], 2))
 
-pdb.set_trace()
+#pdb.set_trace()
 cols = zip(norm_baseline)
 with open('norm_JCT/baseline_jct.csv', 'w') as f:
     writer = csv.writer(f)
@@ -262,11 +262,11 @@ with open('norm_JCT/scheme_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(norm_epoch_boundary)
-with open('norm_JCT/epoch_boundary_jct.csv', 'w') as f:
-    writer = csv.writer(f)
-    for col in cols:
-        writer.writerow(col)
+##cols = zip(norm_epoch_boundary)
+##with open('norm_JCT/epoch_boundary_jct.csv', 'w') as f:
+##    writer = csv.writer(f)
+##    for col in cols:
+##        writer.writerow(col)
 cols = zip(norm_start_on_both)
 with open('norm_JCT/start_on_both_jct.csv', 'w') as f:
     writer = csv.writer(f)
@@ -308,11 +308,11 @@ with open('v100_JCT/scheme_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(v100_epoch_boundary)
-with open('v100_JCT/epoch_boundary_jct.csv', 'w') as f:
-    writer = csv.writer(f)
-    for col in cols:
-        writer.writerow(col)
+##cols = zip(v100_epoch_boundary)
+##with open('v100_JCT/epoch_boundary_jct.csv', 'w') as f:
+##    writer = csv.writer(f)
+##    for col in cols:
+##        writer.writerow(col)
 cols = zip(v100_start_on_both)
 with open('v100_JCT/start_on_both_jct.csv', 'w') as f:
     writer = csv.writer(f)
@@ -354,11 +354,11 @@ with open('k80_JCT/scheme_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
-cols = zip(k80_epoch_boundary)
-with open('k80_JCT/epoch_boundary_jct.csv', 'w') as f:
-    writer = csv.writer(f)
-    for col in cols:
-        writer.writerow(col)
+##cols = zip(k80_epoch_boundary)
+##with open('k80_JCT/epoch_boundary_jct.csv', 'w') as f:
+##    writer = csv.writer(f)
+##    for col in cols:
+##        writer.writerow(col)
 cols = zip(k80_start_on_both)
 with open('k80_JCT/start_on_both_jct.csv', 'w') as f:
     writer = csv.writer(f)

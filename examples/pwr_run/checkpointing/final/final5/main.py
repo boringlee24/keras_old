@@ -147,9 +147,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2182', 'c2183']
-V100_node = ['d1003', 'd1004']
-host_node = 'c0172'
+K80_node = ['c2179', 'c2183']
+V100_node = ['d1020', 'd1018']
+host_node = 'c0189'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -182,7 +182,7 @@ x3_norm = [(i - min(x3_v100)) / (max(x3_v100) - min(x3_v100)) for i in x3_v100]
 x_train = []
 for i in range(len(x1_norm)):
     x_train.append([x1_norm[i], x2_norm[i], x3_norm[i]])
-with open('y_data.json') as f:
+with open('v100_data/y_data.json') as f:
     y_train = json.load(f)
 model_V100 = neighbors.KNeighborsRegressor(n_neighbors = 3, weights='distance')
 model_V100.fit(x_train, y_train)
@@ -200,7 +200,7 @@ x3_norm = [(i - min(x3_k80)) / (max(x3_k80) - min(x3_k80)) for i in x3_k80]
 x_train = []
 for i in range(len(x1_norm)):
     x_train.append([x1_norm[i], x2_norm[i], x3_norm[i]])
-with open('y_data.json') as f:
+with open('k80_data/y_data.json') as f:
     y_train = json.load(f)
 model_K80 = neighbors.KNeighborsRegressor(n_neighbors = 3, weights='distance')
 model_K80.fit(x_train, y_train)
