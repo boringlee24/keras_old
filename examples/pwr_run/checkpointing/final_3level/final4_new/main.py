@@ -164,7 +164,7 @@ pc_job = []
 K80_node = ['c2182']
 P100_node = ['c2189']
 V100_node = ['d1015']
-host_node = 'c0179'
+host_node = 'c0218'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -312,76 +312,86 @@ def max_speedup_promotion_P100(P100_free, V100_free, P100_promote_list, demote_l
                             break
         return promotion_list, demotion_list
 
-def min_speedup_demotion_K80(K80_job, demote_list):
+def min_speedup_demotion_K80(K80_promote_list, demote_list):
     num_demote = len(demote_list)
     global speedup_dict_K80
 
     # selectively demote among active K80 jobs and demote list jobs
-    K80_qual = list(set(list(K80_job.values())))
-    if 'idle' in K80_qual:
-        K80_qual.remove('idle')
-    K80_pool = list(set(K80_qual).union(demote_list))       
-    if len(K80_pool) <= K80_cap: # demote all jobs, no promotion
-        return [], demote_list[:] # must return a copy, otherwise the output points to the same address as input
-    else: # promote the top 4 jobs            
-        pool_dict = {}
-        for job in K80_pool:
-            if job in speedup_dict_K80:
-                pool_dict[job] = speedup_dict_K80[job]        
-        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:K80_cap] # 8 least speedup jobs
-        demotion_list = list(set(demote_list).intersection(sorted_pool))
-        promotion_list = list(set(list(K80_job.values())).difference(sorted_pool))
-        if 'idle' in promotion_list:
-            promotion_list.remove('idle') # this includes force demotion
-        # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
-        # K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.2, replace the K80 job
-        # in sorted pool
-        for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
-            if job_demote in demotion_list:
-                for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
-                    if job_promote in promotion_list:
-                        if speedup_dict_K80[job_promote] - speedup_dict_K80[job_demote] < 0.05:
-                            demotion_list.remove(job_demote)
-                            promotion_list.remove(job_promote)
-                            break
+    K80_pool = list(set(K80_promote_list).union(demote_list))       
+    pool_dict = {}
+    for job in K80_pool:
+        if job in speedup_dict_K80:
+            pool_dict[job] = speedup_dict_K80[job]        
+    sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:len(K80_promote_list)] # least speedup jobs
+    demotion_list = list(set(demote_list).intersection(sorted_pool))
+    promotion_list = list(set(K80_promote_list).difference(sorted_pool))
+    # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
+    # K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.2, replace the K80 job
+    # in sorted pool
+    for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
+        if job_demote in demotion_list:
+            for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
+                if job_promote in promotion_list:
+                    if speedup_dict_K80[job_promote] - speedup_dict_K80[job_demote] < 0.05:
+                        demotion_list.remove(job_demote)
+                        promotion_list.remove(job_promote)
+                        break
 
-        return promotion_list, demotion_list
+    return promotion_list, demotion_list
 
-def min_speedup_demotion_P100(P100_job, demote_list):
+def min_speedup_demotion_P100(P100_promote_list, demote_list):
     num_demote = len(demote_list)
     global speedup_dict_P100
 
     # selectively demote among active P100 jobs and demote list jobs
-    P100_qual = list(set(list(P100_job.values())))
-    if 'idle' in P100_qual:
-        P100_qual.remove('idle')
-    P100_pool = list(set(P100_qual).union(demote_list))       
-    if len(P100_pool) <= P100_cap: # demote all jobs, no promotion
-        return [], demote_list[:] # must return a copy, otherwise the output points to the same address as input
-    else: # promote the top 4 jobs            
+    P100_pool = list(set(P100_promote_list).union(demote_list))       
+    pool_dict = {}
+    for job in P100_pool:
+        if job in speedup_dict_P100:
+            pool_dict[job] = speedup_dict_P100[job]        
+    sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:len(P100_promote_list)] # least speedup jobs
+    demotion_list = list(set(demote_list).intersection(sorted_pool))
+    promotion_list = list(set(P100_promote_list).difference(sorted_pool))
+    # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
+    # P100 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.2, replace the P100 job
+    # in sorted pool
+    for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
+        if job_demote in demotion_list:
+            for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
+                if job_promote in promotion_list:
+                    if speedup_dict_P100[job_promote] - speedup_dict_P100[job_demote] < 0.05:
+                        demotion_list.remove(job_demote)
+                        promotion_list.remove(job_promote)
+                        break
+
+    return promotion_list, demotion_list
+
+def min_speedup_demotion_free(K80_free, P100_free, demote_list):
+    num_demote = len(demote_list)
+    global speedup_dict_P100, speedup_dict_K80
+
+    if len(demote_list) <= P100_free:
+        return [], demote_list[:] # returns K80 demoted, P100_demoted
+    elif len(demote_list) <= K80_free + P100_free:
+        # all jobs in demote_list are getting demoted
+        # fill in P100 with most P100 speedup jobs, the rest goes to K80
         pool_dict = {}
-        for job in P100_pool:
+        for job in demote_list:
             if job in speedup_dict_P100:
                 pool_dict[job] = speedup_dict_P100[job]        
-        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:P100_cap] # 8 least speedup jobs
-        demotion_list = list(set(demote_list).intersection(sorted_pool))
-        promotion_list = list(set(list(P100_job.values())).difference(sorted_pool))
-        if 'idle' in promotion_list:
-            promotion_list.remove('idle') # this includes force demotion
-        # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
-        # P100 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.2, replace the P100 job
-        # in sorted pool
-        for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
-            if job_demote in demotion_list:
-                for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
-                    if job_promote in promotion_list:
-                        if speedup_dict_P100[job_promote] - speedup_dict_P100[job_demote] < 0.05:
-                            demotion_list.remove(job_demote)
-                            promotion_list.remove(job_promote)
-                            break
-
-        return promotion_list, demotion_list
-
+        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=True)[:P100_free] # most P100 speedup jobs
+        K80_demotion = list(set(demote_list).difference(sorted_pool))
+        return K80_demotion, sorted_pool
+    elif len(demote_list) > K80_free + P100_free:
+        difference = len(demote_list) - K80_free - P100_free
+        pool_dict = {}
+        for job in demote_list:
+            if job in speedup_dict_P100:
+                pool_dict[job] = speedup_dict_P100[job]        
+        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:P100_free+K80_free] # least P100 speedup jobs
+        K80_demotion = sorted_pool[:K80_free]
+        P100_demotion = list(set(sorted_pool).difference(K80_demotion))
+        return K80_demotion, P100_demotion
 
 def save_job(node, job): # save_job('c2176', '50')
     # first wait for the job to be qualified for checkpointing
@@ -732,8 +742,8 @@ while True:
         K80_promote_list = list(set(qualified_job).intersection(list(K80_job.values())))
         P100_promote_list = list(set(qualified_job).intersection(list(P100_job.values())))
     else:
-        K80_promote_list = []
-        P100_promote_list = []
+        K80_promote_list = list(set(qualified_job).intersection(list(K80_job.values())))
+        P100_promote_list = list(set(qualified_job).intersection(list(P100_job.values())))
 
     # look at demote list
     for gpu, job in V100_job.items():
@@ -752,10 +762,10 @@ while True:
 
                 demote_qualify_time_K80 = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / speedup_dict_K80[job]
                 demote_qualify_time_P100 = (2 * job_ovhd + p100_1st_ovhd + v100_1st_ovhd) / speedup_dict_P100[job]
-                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time_K80, demote_quelify_time_P100, np.mean(v100_1st[job])):
+                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time_K80, demote_qualify_time_P100, np.mean(v100_1st[job])):
                     demote_list.append(job)
-                    print('job' + job + 'qualified for demote for passing demote qualify time ' +
-                    str(int(demote_qualify_time)))
+                    ##print('job' + job + 'qualified for demote for passing demote qualify time ' +
+                    ##str(int(demote_qualify_time)))
             elif job not in demote_list and job not in step2_job_K80 and job not in step2_job_P100 and job in qualified_job:
                 demote_list.append(job)
                 print('job' + job + 'qualified for demote for profiling')
@@ -770,9 +780,16 @@ while True:
 
         else:
             demote_list_cpy = demote_list[:]
-            K80_promoted, K80_demoted = min_speedup_demotion_K80(K80_job, demote_list_cpy)
+            K80_demoted_free, P100_demoted_free = min_speedup_demotion_free(K80_free, P100_free, demote_list_cpy)
+
+            demote_list_cpy = list(set(demote_list_cpy).difference(K80_demoted_free).difference(P100_demoted_free))
+            K80_promoted, K80_demoted = min_speedup_demotion_K80(K80_promote_list, demote_list_cpy)
+
             demote_list_cpy = list(set(demote_list_cpy).difference(K80_demoted))
-            P100_promoted, P100_demoted = min_speedup_demotion_P100(P100_job, demote_list_cpy)
+            P100_promoted, P100_demoted = min_speedup_demotion_P100(P100_promote_list, demote_list_cpy)
+
+            K80_demoted = list(set(K80_demoted).union(K80_demoted_free))
+            P100_demoted = list(set(P100_demoted).union(P100_demoted_free))
 
             if (len(K80_demoted)+len(P100_demoted))-(len(K80_promoted)+len(P100_promoted)) > new_arrival - V100_free:
                 # demote only # of new arrivals + # of promoted
@@ -849,11 +866,12 @@ while True:
         for gpu, job in V100_job.items():
             if job in total_demoted:
                 # make sure demoted step1 job doesn't get promoted back before finishing profiling
-                if job in step1_job and job not in step2_job:
-                    if job in K80_demoted:
-                        speedup_dict_K80[job] = 0.01
-                    elif job in P100_demoted:
-                        speedup_dict_P100[job] = 0.01
+                if job in K80_demoted:
+                    if job in step1_job and job not in step2_job_K80:
+                         speedup_dict_K80[job] = 0.01
+                elif job in P100_demoted:
+                    if job in step1_job and job not in step2_job_P100:
+                         speedup_dict_P100[job] = 0.01
                 real_node, real_gpu = V100_LUT(gpu)
                 save_job(real_node, job)
                 if finish_dict['job'+job] != 1:
