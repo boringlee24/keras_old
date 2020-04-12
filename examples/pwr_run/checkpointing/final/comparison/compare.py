@@ -27,6 +27,8 @@ with open('../no_threshold/logs/no_threshold_JCT.json', 'r') as fp:
     no_threshold_only = json.load(fp)
 with open('../predict_error/logs/predict_error_JCT.json', 'r') as fp:
     predict_error_only = json.load(fp)
+with open('../high_overhead/logs/high_overhead_JCT.json', 'r') as fp:
+    high_overhead_only = json.load(fp)
 
 with open('v100_only_JCT.json', 'r') as fp:
     v100_only = json.load(fp)
@@ -51,6 +53,7 @@ start_on_both = []
 no_safeguard = []
 no_threshold = []
 predict_error = []
+high_overhead = []
 
 k80 = []
 v100 = []
@@ -66,6 +69,7 @@ for i in range(len(baseline_only)-1):
     no_safeguard.append(no_safeguard_only[job])
     no_threshold.append(no_threshold_only[job])
     predict_error.append(predict_error_only[job])
+    high_overhead.append(high_overhead_only[job])
 
     if i < 50:
         k80.append(k80_only[job])
@@ -85,6 +89,7 @@ start_on_both = np.asarray(start_on_both)
 no_safeguard = np.asarray(no_safeguard)
 no_threshold = np.asarray(no_threshold)
 predict_error = np.asarray(predict_error)
+high_overhead = np.asarray(high_overhead)
 
 cols = zip(baseline)
 with open('JCT/baseline_jct.csv', 'w') as f:
@@ -131,6 +136,11 @@ with open('JCT/predict_error_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
+cols = zip(high_overhead)
+with open('JCT/high_overhead_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
 
 cols = zip(k80)
 with open('JCT/k80_jct.csv', 'w') as f:
@@ -163,6 +173,7 @@ norm_start_on_both = []
 norm_no_safeguard = []
 norm_no_threshold = []
 norm_predict_error = []
+norm_high_overhead = []
 
 v100_baseline = []
 v100_baseline_plus = []
@@ -173,6 +184,7 @@ v100_start_on_both = []
 v100_no_safeguard = []
 v100_no_threshold = []
 v100_predict_error = []
+v100_high_overhead = []
 
 k80_baseline = []
 k80_baseline_plus = []
@@ -183,6 +195,7 @@ k80_start_on_both = []
 k80_no_safeguard = []
 k80_no_threshold = []
 k80_predict_error = []
+k80_high_overhead = []
 
 for i in range(len(baseline)):
     job = str(i+1)
@@ -195,6 +208,7 @@ for i in range(len(baseline)):
     norm_no_safeguard.append(round(baseline_only[job]/no_safeguard_only[job], 2))
     norm_no_threshold.append(round(baseline_only[job]/no_threshold_only[job], 2))
     norm_predict_error.append(round(baseline_only[job]/predict_error_only[job], 2))
+    norm_high_overhead.append(round(baseline_only[job]/high_overhead_only[job], 2))
 
     if i < 50:
         v100_baseline.append(round(v100_only[job]/baseline_only[job], 2))   
@@ -206,6 +220,7 @@ for i in range(len(baseline)):
         v100_no_safeguard.append(round(v100_only[job]/no_safeguard_only[job], 2))
         v100_no_threshold.append(round(v100_only[job]/no_threshold_only[job], 2))
         v100_predict_error.append(round(v100_only[job]/predict_error_only[job], 2))
+        v100_high_overhead.append(round(v100_only[job]/high_overhead_only[job], 2))
 
         k80_baseline.append(round(k80_only[job]/baseline_only[job], 2))   
         k80_baseline_plus.append(round(k80_only[job]/baseline_plus_only[job], 2))
@@ -216,6 +231,7 @@ for i in range(len(baseline)):
         k80_no_safeguard.append(round(k80_only[job]/no_safeguard_only[job], 2))
         k80_no_threshold.append(round(k80_only[job]/no_threshold_only[job], 2))
         k80_predict_error.append(round(k80_only[job]/predict_error_only[job], 2))
+        k80_high_overhead.append(round(k80_only[job]/high_overhead_only[job], 2))
 
     elif i < 100:
         joob = str(i+1-50)
@@ -230,6 +246,7 @@ for i in range(len(baseline)):
         v100_no_safeguard.append(round(v100_joob/no_safeguard_only[job], 2))
         v100_no_threshold.append(round(v100_joob/no_threshold_only[job], 2))
         v100_predict_error.append(round(v100_joob/predict_error_only[job], 2))
+        v100_high_overhead.append(round(v100_joob/high_overhead_only[job], 2))
 
         k80_baseline.append(round(k80_joob/baseline_only[job], 2))   
         k80_baseline_plus.append(round(k80_joob/baseline_plus_only[job], 2))
@@ -240,6 +257,7 @@ for i in range(len(baseline)):
         k80_no_safeguard.append(round(k80_joob/no_safeguard_only[job], 2))
         k80_no_threshold.append(round(k80_joob/no_threshold_only[job], 2))
         k80_predict_error.append(round(k80_joob/predict_error_only[job], 2))
+        k80_high_overhead.append(round(k80_joob/high_overhead_only[job], 2))
 
 #pdb.set_trace()
 cols = zip(norm_baseline)
@@ -284,6 +302,11 @@ with open('norm_JCT/no_threshold_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(norm_predict_error)
 with open('norm_JCT/predict_error_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_high_overhead)
+with open('norm_JCT/high_overhead_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -333,6 +356,11 @@ with open('v100_JCT/predict_error_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
+cols = zip(v100_high_overhead)
+with open('v100_JCT/high_overhead_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
 
 cols = zip(k80_baseline)
 with open('k80_JCT/baseline_jct.csv', 'w') as f:
@@ -376,6 +404,11 @@ with open('k80_JCT/no_threshold_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(k80_predict_error)
 with open('k80_JCT/predict_error_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_high_overhead)
+with open('k80_JCT/high_overhead_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)

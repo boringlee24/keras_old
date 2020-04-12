@@ -143,9 +143,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2182', 'c2183']
-V100_node = ['d1003', 'd1004']
-host_node = 'c0172'
+K80_node = ['c2179', 'c2183']
+V100_node = ['d1020', 'd1018']
+host_node = 'c0169'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -573,7 +573,7 @@ while True:
                 x3 = (x3 - min(x3_data)) / (max(x3_data) - min(x3_data))
 
                 speedup_pred = model.predict(np.array([x1, x2, x3]).reshape((1,-1)))[0] / 100
-                noise = np.random.normal(0, 0.2)
+                noise = np.random.normal(0, 0.3)
                 speedup_pred += noise
                 if speedup_pred >= 1:
                     speedup_pred = 0.99
@@ -695,6 +695,8 @@ while True:
                 if len(checkpoint_finish_check) == 0:
                     break
 
+        # give it some time to clean up checkpointed jobs
+        time.sleep(3)
         # resume promoted jobs on V100, make sure the gpu is idle
         for job_new in promoted[:]:
             if finish_dict['job'+job_new] != 1:

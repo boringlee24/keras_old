@@ -25,6 +25,8 @@ with open('../no_threshold/logs/no_threshold_queue_delay.json', 'r') as fp:
     no_threshold_only = json.load(fp)
 with open('../predict_error/logs/predict_error_queue_delay.json', 'r') as fp:
     predict_error_only = json.load(fp)
+with open('../high_overhead/logs/high_overhead_queue_delay.json', 'r') as fp:
+    high_overhead_only = json.load(fp)
 
 baseline = []
 baseline_plus = []
@@ -35,6 +37,7 @@ start_on_both = []
 no_safeguard = []
 no_threshold = []
 predict_error = []
+high_overhead = []
 
 for i in range(len(baseline_only)-1):
     job = str(i+1)
@@ -47,6 +50,7 @@ for i in range(len(baseline_only)-1):
     no_safeguard.append(no_safeguard_only[job])
     no_threshold.append(no_threshold_only[job])
     predict_error.append(predict_error_only[job])
+    high_overhead.append(high_overhead_only[job])
 
 baseline = np.asarray(baseline)
 baseline_plus = np.asarray(baseline_plus)
@@ -57,6 +61,7 @@ start_on_both = np.asarray(start_on_both)
 no_safeguard = np.asarray(no_safeguard)
 no_threshold = np.asarray(no_threshold)
 predict_error = np.asarray(predict_error)
+high_overhead = np.asarray(high_overhead)
 
 cols = zip(baseline)
 with open('queue_delay/baseline_queue_delay.csv', 'w') as f:
@@ -100,6 +105,11 @@ with open('queue_delay/no_threshold_queue_delay.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(predict_error)
 with open('queue_delay/predict_error_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(high_overhead)
+with open('queue_delay/high_overhead_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
