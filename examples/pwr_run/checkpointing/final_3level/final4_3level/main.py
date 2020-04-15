@@ -164,7 +164,7 @@ pc_job = []
 K80_node = ['c2179', 'c2183']
 P100_node = ['c2189']
 V100_node = ['d1015']
-host_node = 'c0174'
+host_node = 'c0172'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 

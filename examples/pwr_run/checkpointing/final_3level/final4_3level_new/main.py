@@ -174,6 +174,7 @@ testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
 INTERVAL = 30 # make decision every 30s
+run_log = open('run.log','w')
 
 def K80_LUT(gpu):
     quotient = int(gpu) // 8
@@ -248,14 +249,14 @@ def send_signal(node, cmd):
     # Connect the socket to the port where the server is listening
     server_address = (node, int(port))
 
-    print('connecting to {} port {}'.format(*server_address))
+    print('connecting to {} port {}'.format(*server_address), file=run_log, flush=True)
     sock.connect(server_address)
 
     try:
         # Send data
         message = cmd.encode('utf-8') #b'save 35'  #b'start 35 gpu 6'#b'save 35'
  
-        print('sending {!r}'.format(message))
+        print('sending {!r}'.format(message), file=run_log, flush=True)
         sock.sendall(message)
         while True:
             data = sock.recv(32)
@@ -263,7 +264,7 @@ def send_signal(node, cmd):
 #                print('received {!r}'.format(data))
                 break
             else:
-                print('waiting for success signal')
+                print('waiting for success signal', file=run_log, flush=True)
                 time.sleep(1)
     finally:
         #print('closing socket')
@@ -315,7 +316,7 @@ def max_speedup_promotion_V100(V100_free, promote_list, demote_list):
             if job_demote in demotion_list:
                 for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                     if job_promote in promotion_list:
-                        if speedup_dict_V100[job_promote] - speedup_dict_V100[job_demote] < 0.05:
+                        if speedup_dict_V100[job_promote] - speedup_dict_V100[job_demote] < 0.3:
                             demotion_list.remove(job_demote)
                             promotion_list.remove(job_promote)
                             break
@@ -348,7 +349,7 @@ def max_speedup_promotion_P100(P100_free, promote_list, demote_list):
             if job_demote in demotion_list:
                 for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                     if job_promote in promotion_list:
-                        if speedup_dict_P100[job_promote] - speedup_dict_P100[job_demote] < 0.05:
+                        if speedup_dict_P100[job_promote] - speedup_dict_P100[job_demote] < 0.3:
                             demotion_list.remove(job_demote)
                             promotion_list.remove(job_promote)
                             break
@@ -372,7 +373,7 @@ def min_speedup_demotion_V100(promote_list, demote_list):
         if job_demote in demotion_list:
             for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                 if job_promote in promotion_list:
-                    if speedup_dict_V100[job_promote] - speedup_dict_V100[job_demote] < 0.05:
+                    if speedup_dict_V100[job_promote] - speedup_dict_V100[job_demote] < 0.15:
                         demotion_list.remove(job_demote)
                         promotion_list.remove(job_promote)
                         break
@@ -397,7 +398,7 @@ def min_speedup_demotion_P100(promote_list, demote_list): # in this case availab
         if job_demote in demotion_list:
             for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                 if job_promote in promotion_list:
-                    if speedup_dict_P100[job_promote] - speedup_dict_P100[job_demote] < 0.05: # use 0.1 for P100 pairs
+                    if speedup_dict_P100[job_promote] - speedup_dict_P100[job_demote] < 0.15: # use 0.1 for P100 pairs
                         demotion_list.remove(job_demote)
                         promotion_list.remove(job_promote)
                         break
@@ -495,7 +496,7 @@ def check_step1_complete_V100(job_list):
                         wall_time = [t.wall_time for t in iterator.Scalars(tag)]
                         V100_epoch_time[job] = wall_time[1] - wall_time[0]
                         step1_job_V100.append(job)
-                        print('job' + job + ' has reached step1 complete on V100')
+                        print('job' + job + ' has reached step1 complete on V100', file=run_log, flush=True)
                 except Exception:
                     pass
 
@@ -522,7 +523,7 @@ def check_step1_complete_P100(job_list):
                         wall_time = [t.wall_time for t in iterator.Scalars(tag)]
                         P100_epoch_time[job] = wall_time[1] - wall_time[0]
                         step1_job_P100.append(job)
-                        print('job' + job + ' has reached step1 complete on P100')
+                        print('job' + job + ' has reached step1 complete on P100', file=run_log, flush=True)
                 except Exception:
                     pass
 
@@ -552,7 +553,7 @@ def check_step2_complete(job_list):
                         wall_time = [t.wall_time for t in iterator.Scalars(tag)]
                         K80_epoch_time[job] = wall_time[1] - wall_time[0]
                         step2_job.append(job)
-                        print('job' + job + ' has reached step2 complete on K80')
+                        print('job' + job + ' has reached step2 complete on K80', file=run_log, flush=True)
                 except Exception:
                     pass
 
@@ -594,7 +595,7 @@ def thread_function():
     # here listen on the socket 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = (host_node, 10002)
-    print('starting up on {} port {}'.format(*server_address))
+    print('starting up on {} port {}'.format(*server_address), file=run_log, flush=True)
     sock.bind(server_address)
     sock.listen(5)  
     while True:
@@ -711,14 +712,14 @@ while True:
             if finish_dict['job'+job] == 1:
                 K80_used -= 1            
                 K80_job[gpu] = 'idle'
-                print('K80 finished job: ' + job)
+                print('K80 finished job: ' + job, file=run_log, flush=True)
 
     for gpu, job in P100_job.items():
         if job != 'idle':
             if finish_dict['job'+job] == 1:
                 P100_used -= 1            
                 P100_job[gpu] = 'idle'
-                print('P100 finished job: ' + job)
+                print('P100 finished job: ' + job, file=run_log, flush=True)
                 if job in P100_demote_list:
                     P100_demote_list.remove(job)
 
@@ -727,7 +728,7 @@ while True:
             if finish_dict['job'+job] == 1:
                 V100_used -= 1            
                 V100_job[gpu] = 'idle'
-                print('V100 finished job: ' + job)
+                print('V100 finished job: ' + job, file=run_log, flush=True)
                 if job in V100_demote_list:
                     V100_demote_list.remove(job)
 
@@ -741,7 +742,7 @@ while True:
                 real_node, real_gpu = V100_LUT(gpu)
                 kill_job(real_node, job)
                 qualified_job.append(job)
-                print('job' + job + ' has been qualified for demotion')
+                print('job' + job + ' has been qualified for demotion', file=run_log, flush=True)
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / V100_epoch_time[job]
@@ -765,7 +766,7 @@ while True:
                 real_node, real_gpu = P100_LUT(gpu)
                 kill_job(real_node, job)
                 qualified_job.append(job)
-                print('job' + job + ' has been qualified for demotion')
+                print('job' + job + ' has been qualified for demotion', file=run_log, flush=True)
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / P100_epoch_time[job]
@@ -834,11 +835,11 @@ while True:
                 demote_qualify_time_V100 = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / speedup_dict_V100[job]
                 if int(time.time() - promote_start_time[job]) > max(demote_qualify_time_V100, max(v100_1st[job])):
                     V100_demote_list.append(job)
-                    print('job' + job + 'qualified for demote for passing demote qualify time')
+                    print('job' + job + 'qualified for demote for passing demote qualify time', file=run_log, flush=True)
                     ##str(int(demote_qualify_time)))
             elif job not in V100_demote_list and job not in step2_job and job in qualified_job:
                 V100_demote_list.append(job)
-                print('job' + job + 'qualified for demote for profiling')
+                print('job' + job + 'qualified for demote for profiling', file=run_log, flush=True)
 
     for gpu, job in P100_job.items():
         if job != 'idle' and job in step1_job_P100:
@@ -854,23 +855,23 @@ while True:
                 demote_qualify_time_P100 = (2 * job_ovhd + k80_1st_ovhd + p100_1st_ovhd) / speedup_dict_P100[job]
                 if int(time.time() - promote_start_time[job]) > max(demote_qualify_time_P100, max(p100_1st[job])):
                     P100_demote_list.append(job)
-                    print('job' + job + 'qualified for demote for passing demote qualify time')
+                    print('job' + job + 'qualified for demote for passing demote qualify time', file=run_log, flush=True)
                     ##str(int(demote_qualify_time)))
             elif job not in P100_demote_list and job not in step2_job and job in qualified_job:
                 P100_demote_list.append(job)
-                print('job' + job + 'qualified for demote for profiling')
+                print('job' + job + 'qualified for demote for profiling', file=run_log, flush=True)
 
     if len(K80_promote_list) > 0 or len(P100_demote_list) > 0 or len(V100_demote_list) > 0:
         if new_arrival == 0 and K80_free < K80_cap: # all jobs received, jobs still running on K80
             promote_list_cpy = K80_promote_list[:]
             V100_promoted, V100_demoted = max_speedup_promotion_V100(V100_free, promote_list_cpy, V100_demote_list)
             if len(V100_demoted) > len(V100_promoted):
-                print('should never happen for K80')
+                print('should never happen for K80', file=run_log, flush=True)
                 pdb.set_trace()
             promote_list_cpy = list(set(promote_list_cpy).difference(V100_promoted))
             P100_promoted, P100_demoted = max_speedup_promotion_P100(P100_free, promote_list_cpy, P100_demote_list)
             if len(P100_demoted) > len(P100_promoted):
-                print('should never happen for P100')
+                print('should never happen for P100', file=run_log, flush=True)
                 pdb.set_trace()
         elif new_arrival == 0 and K80_free == K80_cap: # all jobs received, jobs only running on P100 and V100
             # when there are free V100s, promote P100 job to V100
@@ -890,29 +891,41 @@ while True:
 
             P100_demote_list_cpy = list(set(P100_demote_list_cpy).difference(P100_demoted))
             V100_demote_list_cpy = list(set(V100_demote_list_cpy).difference(V100_demoted))
+            # also consider demote newly promoted job to free K80
+            P100_demote_list_cpy = list(set(P100_demote_list_cpy).union(P100_promoted))
+            V100_demote_list_cpy = list(set(V100_demote_list_cpy).union(V100_promoted))
+
             have_to_demote = new_arrival - V100_free - P100_free
             P100_demoted_free, V100_demoted_free = min_speedup_demotion_free(K80_free, P100_demote_list_cpy,
             V100_demote_list_cpy, have_to_demote)
-
+            # remove jobs that got demoted back immediately after promotion
+            V100_promoted = list(set(V100_promoted).difference(V100_demoted_free))
+            P100_promoted = list(set(P100_promoted).difference(P100_demoted_free))
+            # 1st phase demoted and 2nd phase demote to free
             V100_demoted = list(set(V100_demoted).union(V100_demoted_free))
             P100_demoted = list(set(P100_demoted).union(P100_demoted_free))
+            # make sure demoted jobs are not already in K80 promote list
+            V100_demoted = list(set(V100_demoted).difference(K80_promote_list))
+            P100_demoted = list(set(P100_demoted).difference(K80_promote_list))
 
         total_demoted = list(set(V100_demoted).union(P100_demoted))
         total_promoted = list(set(V100_promoted).union(P100_promoted))
 
         if len(V100_promoted) > 0:
             if new_arrival == 0:
-                print('no new job arrivals')
-            print('V100 promoted jobs: ', V100_promoted)
+                print('no new job arrivals', file=run_log, flush=True)
+                if K80_free == K80_cap:
+                    print('jobs promoted from P100 to V100', file=run_log, flush=True)
+            print('V100 promoted jobs: ', V100_promoted, file=run_log, flush=True)
         if len(P100_promoted) > 0:
             if new_arrival == 0:
-                print('no new job arrivals')
-            print('P100 promoted jobs: ', P100_promoted)
+                print('no new job arrivals', file=run_log, flush=True)
+            print('P100 promoted jobs: ', P100_promoted, file=run_log, flush=True)
 
         if len(V100_demoted) > 0:
-            print('V100 demoted jobs: ', V100_demoted)
+            print('V100 demoted jobs: ', V100_demoted, file=run_log, flush=True)
         if len(P100_demoted) > 0:
-            print('P100 demoted jobs: ', P100_demoted)
+            print('P100 demoted jobs: ', P100_demoted, file=run_log, flush=True)
         # stop all promoted jobs on K80
         checkpoint_finish_check = []
         for gpu, job in K80_job.items():
@@ -966,12 +979,12 @@ while True:
                 time.sleep(5)
                 for job in checkpoint_finish_check[:]:
                     if checkpoint_dict['job'+job] == 1: # checkpoint has finished, gpu is free
-                        print(job + ' checkpointed successfully')
+                        print(job + ' checkpointed successfully', file=run_log, flush=True)
                         checkpoint_dict['job'+job] = 0 # reset it
                         checkpoint_finish_check.remove(job)
                     # also check if job already finished before sending checkpoint signal
                     elif finish_dict['job'+job] == 1:
-                        print(job + ' finished before receiving checkpoint signal')
+                        print(job + ' finished before receiving checkpoint signal', file=run_log, flush=True)
                         checkpoint_finish_check.remove(job)
                 if len(checkpoint_finish_check) == 0:
                     break
@@ -1020,7 +1033,7 @@ while True:
                         K80_used += 1
                         break
             else: # job has already finished before checkpointing
-                print('job'+job_new+' has finished before checkpointing')
+                print('job'+job_new+' has finished before checkpointing', file=run_log, flush=True)
                 total_demoted.remove(job_new)
 
         # perform a check, make sure all promoted/demoted jobs are scheduled
@@ -1095,7 +1108,7 @@ while True:
     P100_idle_num = sum(value == 'idle' for value in P100_job.values())
     V100_idle_num = sum(value == 'idle' for value in V100_job.values())
     if K80_idle_num == K80_cap and P100_idle_num == P100_cap and V100_idle_num == V100_cap and index == len(queue):
-        print('all jobs are finished!')
+        print('all jobs are finished!', file=run_log, flush=True)
         break
 
 
@@ -1111,7 +1124,7 @@ queue_delay['average'] = average_queue_delay
 
 # after everything is finished
 
-print('finished all runs')
+print('finished all runs', file=run_log, flush=True)
 JCT_name = testcase + '_JCT.json'
 overhead_name = testcase + '_overhead.json'
 num_mig_name = testcase + '_num_mig.json'
