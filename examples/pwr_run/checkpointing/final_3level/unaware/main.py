@@ -78,7 +78,7 @@ gpu_usage_completion = []
 
 index = 0
 
-K80_cap = 4
+K80_cap = 16
 P100_cap = 4
 V100_cap = 4
 K80_used = 0
@@ -97,10 +97,10 @@ for i in range(V100_cap):
 qualified_job = []
 pc_job = []
 
-K80_node = ['c2182']
+K80_node = ['c2179', 'c2183']
 P100_node = ['c2189']
-V100_node = ['d1014']
-host_node = 'c0193'
+V100_node = ['d1015']
+host_node = 'c0168'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
