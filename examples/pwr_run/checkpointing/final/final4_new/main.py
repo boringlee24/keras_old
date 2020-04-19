@@ -127,8 +127,8 @@ for item in queue:
 index = 0
 all_jobs_started = False
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 12
+V100_cap = 4
 K80_used = 0
 V100_used = 0
 
@@ -143,9 +143,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2179', 'c2183']
-V100_node = ['d1020', 'd1018']
-host_node = 'c0191'
+K80_node = ['c2180', 'c2181']
+V100_node = ['d1021', 'd1012']
+host_node = 'c0281'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 

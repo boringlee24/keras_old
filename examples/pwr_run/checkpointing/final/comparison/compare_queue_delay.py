@@ -27,6 +27,20 @@ with open('../predict_error/logs/predict_error_queue_delay.json', 'r') as fp:
     predict_error_only = json.load(fp)
 with open('../high_overhead/logs/high_overhead_queue_delay.json', 'r') as fp:
     high_overhead_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/16_4/final4_new_queue_delay.json', 'r') as fp:
+    scheme_16p4_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/16_2/final4_new_queue_delay.json', 'r') as fp:
+    scheme_16p2_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/12_8/final4_new_queue_delay.json', 'r') as fp:
+    scheme_12p8_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/12_4/final4_new_queue_delay.json', 'r') as fp:
+    scheme_12p4_only = json.load(fp)
+with open('../high_overhead/logs_tuned_0.2/high_overhead_queue_delay.json', 'r') as fp:
+    high_overhead_tuned_only = json.load(fp)
+with open('../final5/sensitivity_logs/16_4/final5_queue_delay.json', 'r') as fp:
+    scheme_16p4_tuned_only = json.load(fp)
+with open('../final5/sensitivity_logs/12_4/final5_queue_delay.json', 'r') as fp:
+    scheme_12p4_tuned_only = json.load(fp)
 
 baseline = []
 baseline_plus = []
@@ -38,6 +52,13 @@ no_safeguard = []
 no_threshold = []
 predict_error = []
 high_overhead = []
+scheme_16p4 = []
+scheme_16p2 = []
+scheme_12p8 = []
+scheme_12p4 = []
+high_overhead_tuned = []
+scheme_16p4_tuned = []
+scheme_12p4_tuned = []
 
 for i in range(len(baseline_only)-1):
     job = str(i+1)
@@ -51,6 +72,13 @@ for i in range(len(baseline_only)-1):
     no_threshold.append(no_threshold_only[job])
     predict_error.append(predict_error_only[job])
     high_overhead.append(high_overhead_only[job])
+    scheme_16p4.append(scheme_16p4_only[job])
+    scheme_16p2.append(scheme_16p2_only[job])
+    scheme_12p8.append(scheme_12p8_only[job])
+    scheme_12p4.append(scheme_12p4_only[job])
+    high_overhead_tuned.append(high_overhead_tuned_only[job])
+    scheme_16p4_tuned.append(scheme_16p4_tuned_only[job])
+    scheme_12p4_tuned.append(scheme_12p4_tuned_only[job])
 
 baseline = np.asarray(baseline)
 baseline_plus = np.asarray(baseline_plus)
@@ -62,6 +90,13 @@ no_safeguard = np.asarray(no_safeguard)
 no_threshold = np.asarray(no_threshold)
 predict_error = np.asarray(predict_error)
 high_overhead = np.asarray(high_overhead)
+scheme_16p4 = np.asarray(scheme_16p4)
+scheme_16p2 = np.asarray(scheme_16p2)
+scheme_12p8 = np.asarray(scheme_12p8)
+scheme_12p4 = np.asarray(scheme_12p4)
+high_overhead_tuned = np.asarray(high_overhead_tuned)
+scheme_16p4_tuned = np.asarray(scheme_16p4_tuned)
+scheme_12p4_tuned = np.asarray(scheme_12p4_tuned)
 
 cols = zip(baseline)
 with open('queue_delay/baseline_queue_delay.csv', 'w') as f:
@@ -110,6 +145,41 @@ with open('queue_delay/predict_error_queue_delay.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(high_overhead)
 with open('queue_delay/high_overhead_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_16p4)
+with open('queue_delay/scheme_16p4_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_16p2)
+with open('queue_delay/scheme_16p2_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_12p8)
+with open('queue_delay/scheme_12p8_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_12p4)
+with open('queue_delay/scheme_12p4_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(high_overhead_tuned)
+with open('queue_delay/high_overhead_tuned_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_16p4_tuned)
+with open('queue_delay/scheme_16p4_tuned_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_12p4_tuned)
+with open('queue_delay/scheme_12p4_tuned_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)

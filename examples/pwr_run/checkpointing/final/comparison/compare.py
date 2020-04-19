@@ -29,6 +29,20 @@ with open('../predict_error/logs/predict_error_JCT.json', 'r') as fp:
     predict_error_only = json.load(fp)
 with open('../high_overhead/logs/high_overhead_JCT.json', 'r') as fp:
     high_overhead_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/16_4/final4_new_JCT.json', 'r') as fp:
+    scheme_16p4_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/16_2/final4_new_JCT.json', 'r') as fp:
+    scheme_16p2_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/12_8/final4_new_JCT.json', 'r') as fp:
+    scheme_12p8_only = json.load(fp)
+with open('../final4_new/sensitivity_logs/12_4/final4_new_JCT.json', 'r') as fp:
+    scheme_12p4_only = json.load(fp)
+with open('../high_overhead/logs_tuned_0.2/high_overhead_JCT.json', 'r') as fp:
+    high_overhead_tuned_only = json.load(fp)
+with open('../final5/sensitivity_logs/16_4/final5_JCT.json', 'r') as fp:
+    scheme_16p4_tuned_only = json.load(fp)
+with open('../final5/sensitivity_logs/12_4/final5_JCT.json', 'r') as fp:
+    scheme_12p4_tuned_only = json.load(fp)
 
 with open('v100_only_JCT.json', 'r') as fp:
     v100_only = json.load(fp)
@@ -54,6 +68,13 @@ no_safeguard = []
 no_threshold = []
 predict_error = []
 high_overhead = []
+scheme_16p4 = []
+scheme_16p2 = []
+scheme_12p8 = []
+scheme_12p4 = []
+high_overhead_tuned = []
+scheme_16p4_tuned = []
+scheme_12p4_tuned = []
 
 k80 = []
 v100 = []
@@ -70,6 +91,13 @@ for i in range(len(baseline_only)-1):
     no_threshold.append(no_threshold_only[job])
     predict_error.append(predict_error_only[job])
     high_overhead.append(high_overhead_only[job])
+    scheme_16p4.append(scheme_16p4_only[job])
+    scheme_16p2.append(scheme_16p2_only[job])
+    scheme_12p8.append(scheme_12p8_only[job])
+    scheme_12p4.append(scheme_12p4_only[job])
+    high_overhead_tuned.append(high_overhead_tuned_only[job])
+    scheme_16p4_tuned.append(scheme_16p4_tuned_only[job])
+    scheme_12p4_tuned.append(scheme_12p4_tuned_only[job])
 
     if i < 50:
         k80.append(k80_only[job])
@@ -90,6 +118,13 @@ no_safeguard = np.asarray(no_safeguard)
 no_threshold = np.asarray(no_threshold)
 predict_error = np.asarray(predict_error)
 high_overhead = np.asarray(high_overhead)
+scheme_16p4 = np.asarray(scheme_16p4)
+scheme_16p2 = np.asarray(scheme_16p2)
+scheme_12p8 = np.asarray(scheme_12p8)
+scheme_12p4 = np.asarray(scheme_12p4)
+high_overhead_tuned = np.asarray(high_overhead_tuned)
+scheme_16p4_tuned = np.asarray(scheme_16p4_tuned)
+scheme_12p4_tuned = np.asarray(scheme_12p4_tuned)
 
 cols = zip(baseline)
 with open('JCT/baseline_jct.csv', 'w') as f:
@@ -141,6 +176,41 @@ with open('JCT/high_overhead_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
+cols = zip(scheme_16p4)
+with open('JCT/scheme_16p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_16p2)
+with open('JCT/scheme_16p2_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_12p8)
+with open('JCT/scheme_12p8_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_12p4)
+with open('JCT/scheme_12p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(high_overhead_tuned)
+with open('JCT/high_overhead_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_16p4_tuned)
+with open('JCT/scheme_16p4_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(scheme_12p4_tuned)
+with open('JCT/scheme_12p4_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
 
 cols = zip(k80)
 with open('JCT/k80_jct.csv', 'w') as f:
@@ -174,6 +244,13 @@ norm_no_safeguard = []
 norm_no_threshold = []
 norm_predict_error = []
 norm_high_overhead = []
+norm_scheme_16p4 = []
+norm_scheme_16p2 = []
+norm_scheme_12p8 = []
+norm_scheme_12p4 = []
+norm_high_overhead_tuned = []
+norm_scheme_16p4_tuned = []
+norm_scheme_12p4_tuned = []
 
 v100_baseline = []
 v100_baseline_plus = []
@@ -185,6 +262,13 @@ v100_no_safeguard = []
 v100_no_threshold = []
 v100_predict_error = []
 v100_high_overhead = []
+v100_scheme_16p4 = []
+v100_scheme_16p2 = []
+v100_scheme_12p8 = []
+v100_scheme_12p4 = []
+v100_high_overhead_tuned = []
+v100_scheme_16p4_tuned = []
+v100_scheme_12p4_tuned = []
 
 k80_baseline = []
 k80_baseline_plus = []
@@ -196,6 +280,13 @@ k80_no_safeguard = []
 k80_no_threshold = []
 k80_predict_error = []
 k80_high_overhead = []
+k80_scheme_16p4 = []
+k80_scheme_16p2 = []
+k80_scheme_12p8 = []
+k80_scheme_12p4 = []
+k80_high_overhead_tuned = []
+k80_scheme_16p4_tuned = []
+k80_scheme_12p4_tuned = []
 
 for i in range(len(baseline)):
     job = str(i+1)
@@ -209,6 +300,13 @@ for i in range(len(baseline)):
     norm_no_threshold.append(round(baseline_only[job]/no_threshold_only[job], 2))
     norm_predict_error.append(round(baseline_only[job]/predict_error_only[job], 2))
     norm_high_overhead.append(round(baseline_only[job]/high_overhead_only[job], 2))
+    norm_scheme_16p4.append(round(baseline_only[job]/scheme_16p4_only[job], 2))
+    norm_scheme_16p2.append(round(baseline_only[job]/scheme_16p2_only[job], 2))
+    norm_scheme_12p8.append(round(baseline_only[job]/scheme_12p8_only[job], 2))
+    norm_scheme_12p4.append(round(baseline_only[job]/scheme_12p4_only[job], 2))
+    norm_high_overhead_tuned.append(round(baseline_only[job]/high_overhead_tuned_only[job], 2))
+    norm_scheme_16p4_tuned.append(round(baseline_only[job]/scheme_16p4_tuned_only[job], 2))
+    norm_scheme_12p4_tuned.append(round(baseline_only[job]/scheme_12p4_tuned_only[job], 2))
 
     if i < 50:
         v100_baseline.append(round(v100_only[job]/baseline_only[job], 2))   
@@ -221,6 +319,13 @@ for i in range(len(baseline)):
         v100_no_threshold.append(round(v100_only[job]/no_threshold_only[job], 2))
         v100_predict_error.append(round(v100_only[job]/predict_error_only[job], 2))
         v100_high_overhead.append(round(v100_only[job]/high_overhead_only[job], 2))
+        v100_scheme_16p4.append(round(v100_only[job]/scheme_16p4_only[job], 2))
+        v100_scheme_16p2.append(round(v100_only[job]/scheme_16p2_only[job], 2))
+        v100_scheme_12p8.append(round(v100_only[job]/scheme_12p8_only[job], 2))
+        v100_scheme_12p4.append(round(v100_only[job]/scheme_12p4_only[job], 2))
+        v100_high_overhead_tuned.append(round(v100_only[job]/high_overhead_tuned_only[job], 2))
+        v100_scheme_16p4_tuned.append(round(v100_only[job]/scheme_16p4_tuned_only[job], 2))
+        v100_scheme_12p4_tuned.append(round(v100_only[job]/scheme_12p4_tuned_only[job], 2))
 
         k80_baseline.append(round(k80_only[job]/baseline_only[job], 2))   
         k80_baseline_plus.append(round(k80_only[job]/baseline_plus_only[job], 2))
@@ -232,6 +337,13 @@ for i in range(len(baseline)):
         k80_no_threshold.append(round(k80_only[job]/no_threshold_only[job], 2))
         k80_predict_error.append(round(k80_only[job]/predict_error_only[job], 2))
         k80_high_overhead.append(round(k80_only[job]/high_overhead_only[job], 2))
+        k80_scheme_16p4.append(round(k80_only[job]/scheme_16p4_only[job], 2))
+        k80_scheme_16p2.append(round(k80_only[job]/scheme_16p2_only[job], 2))
+        k80_scheme_12p8.append(round(k80_only[job]/scheme_12p8_only[job], 2))
+        k80_scheme_12p4.append(round(k80_only[job]/scheme_12p4_only[job], 2))
+        k80_high_overhead_tuned.append(round(k80_only[job]/high_overhead_tuned_only[job], 2))
+        k80_scheme_16p4_tuned.append(round(k80_only[job]/scheme_16p4_tuned_only[job], 2))
+        k80_scheme_12p4_tuned.append(round(k80_only[job]/scheme_12p4_tuned_only[job], 2))
 
     elif i < 100:
         joob = str(i+1-50)
@@ -247,6 +359,13 @@ for i in range(len(baseline)):
         v100_no_threshold.append(round(v100_joob/no_threshold_only[job], 2))
         v100_predict_error.append(round(v100_joob/predict_error_only[job], 2))
         v100_high_overhead.append(round(v100_joob/high_overhead_only[job], 2))
+        v100_scheme_16p4.append(round(v100_joob/scheme_16p4_only[job], 2))
+        v100_scheme_16p2.append(round(v100_joob/scheme_16p2_only[job], 2))
+        v100_scheme_12p8.append(round(v100_joob/scheme_12p8_only[job], 2))
+        v100_scheme_12p4.append(round(v100_joob/scheme_12p4_only[job], 2))
+        v100_high_overhead_tuned.append(round(v100_joob/high_overhead_tuned_only[job], 2))
+        v100_scheme_16p4_tuned.append(round(v100_joob/scheme_16p4_tuned_only[job], 2))
+        v100_scheme_12p4_tuned.append(round(v100_joob/scheme_12p4_tuned_only[job], 2))
 
         k80_baseline.append(round(k80_joob/baseline_only[job], 2))   
         k80_baseline_plus.append(round(k80_joob/baseline_plus_only[job], 2))
@@ -258,6 +377,13 @@ for i in range(len(baseline)):
         k80_no_threshold.append(round(k80_joob/no_threshold_only[job], 2))
         k80_predict_error.append(round(k80_joob/predict_error_only[job], 2))
         k80_high_overhead.append(round(k80_joob/high_overhead_only[job], 2))
+        k80_scheme_16p4.append(round(k80_joob/scheme_16p4_only[job], 2))
+        k80_scheme_16p2.append(round(k80_joob/scheme_16p2_only[job], 2))
+        k80_scheme_12p8.append(round(k80_joob/scheme_12p8_only[job], 2))
+        k80_scheme_12p4.append(round(k80_joob/scheme_12p4_only[job], 2))
+        k80_high_overhead_tuned.append(round(k80_joob/high_overhead_tuned_only[job], 2))
+        k80_scheme_16p4_tuned.append(round(k80_joob/scheme_16p4_tuned_only[job], 2))
+        k80_scheme_12p4_tuned.append(round(k80_joob/scheme_12p4_tuned_only[job], 2))
 
 #pdb.set_trace()
 cols = zip(norm_baseline)
@@ -307,6 +433,41 @@ with open('norm_JCT/predict_error_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(norm_high_overhead)
 with open('norm_JCT/high_overhead_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_scheme_16p4)
+with open('norm_JCT/scheme_16p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_scheme_16p2)
+with open('norm_JCT/scheme_16p2_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_scheme_12p8)
+with open('norm_JCT/scheme_12p8_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_scheme_12p4)
+with open('norm_JCT/scheme_12p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_high_overhead_tuned)
+with open('norm_JCT/high_overhead_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_scheme_16p4_tuned)
+with open('norm_JCT/scheme_16p4_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_scheme_12p4_tuned)
+with open('norm_JCT/scheme_12p4_tuned_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -361,6 +522,41 @@ with open('v100_JCT/high_overhead_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
+cols = zip(v100_scheme_16p4)
+with open('v100_JCT/scheme_16p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(v100_scheme_16p2)
+with open('v100_JCT/scheme_16p2_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(v100_scheme_12p8)
+with open('v100_JCT/scheme_12p8_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(v100_scheme_12p4)
+with open('v100_JCT/scheme_12p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(v100_high_overhead_tuned)
+with open('v100_JCT/high_overhead_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(v100_scheme_16p4_tuned)
+with open('v100_JCT/scheme_16p4_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(v100_scheme_12p4_tuned)
+with open('v100_JCT/scheme_12p4_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
 
 cols = zip(k80_baseline)
 with open('k80_JCT/baseline_jct.csv', 'w') as f:
@@ -409,6 +605,41 @@ with open('k80_JCT/predict_error_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(k80_high_overhead)
 with open('k80_JCT/high_overhead_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_scheme_16p4)
+with open('k80_JCT/scheme_16p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_scheme_16p2)
+with open('k80_JCT/scheme_16p2_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_scheme_12p8)
+with open('k80_JCT/scheme_12p8_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_scheme_12p4)
+with open('k80_JCT/scheme_12p4_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_high_overhead_tuned)
+with open('k80_JCT/high_overhead_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_scheme_16p4_tuned)
+with open('k80_JCT/scheme_16p4_tuned_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_scheme_12p4_tuned)
+with open('k80_JCT/scheme_12p4_tuned_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)

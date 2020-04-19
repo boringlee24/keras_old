@@ -143,9 +143,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2179', 'c2183']
-V100_node = ['d1020', 'd1018']
-host_node = 'c0183'
+K80_node = ['c2180', 'c2181']
+V100_node = ['d1021', 'd1012']
+host_node = 'c0255'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -250,7 +250,7 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_li
                 if job_demote in demotion_list:
                     for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                         if job_promote in promotion_list:
-                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
+                            if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.2:
                                 demotion_list.remove(job_demote)
                                 promotion_list.remove(job_promote)
                                 break
@@ -297,7 +297,7 @@ def min_speedup_demotion(K80_job, demote_list):
             if job_demote in demotion_list:
                 for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
                     if job_promote in promotion_list:
-                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
+                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.2:
                             demotion_list.remove(job_demote)
                             promotion_list.remove(job_promote)
                             break
@@ -612,7 +612,7 @@ while True:
                 k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
                 v100_1st_ovhd = np.mean(v100_1st[job]) - V100_epoch_time[job]
                 demote_qualify_time = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / job_speedup
-                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, np.mean(v100_1st[job])):
+                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, max(v100_1st[job])):
                     demote_list.append(job)
                     print('job' + job + 'qualified for demote for passing demote qualify time ' +
                     str(int(demote_qualify_time)))
@@ -689,6 +689,8 @@ while True:
                 if len(checkpoint_finish_check) == 0:
                     break
 
+        # give it some time to cleanup old checkpointed jobs
+        time.sleep(3)
         # resume promoted jobs on V100, make sure the gpu is idle
         for job_new in promoted[:]:
             if finish_dict['job'+job_new] != 1:

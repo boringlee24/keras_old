@@ -131,8 +131,8 @@ for item in queue:
 index = 0
 all_jobs_started = False
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 12
+V100_cap = 4
 K80_used = 0
 V100_used = 0
 
@@ -147,8 +147,8 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2179', 'c2183']
-V100_node = ['d1020', 'd1018']
+K80_node = ['c2180', 'c2181']
+V100_node = ['d1021', 'd1012']
 host_node = 'c0189'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
@@ -658,7 +658,7 @@ while True:
                 k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
                 v100_1st_ovhd = np.mean(v100_1st[job]) - V100_epoch_time[job]
                 demote_qualify_time = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / job_speedup
-                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, np.mean(v100_1st[job])):
+                if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, max(v100_1st[job])):
                     demote_list.append(job)
                     print('job' + job + 'qualified for demote for passing demote qualify time ' +
                     str(int(demote_qualify_time)))
@@ -720,6 +720,8 @@ while True:
                 if len(checkpoint_finish_check) == 0:
                     break
 
+        # give it some time to cleanup old checkpointed jobs
+        time.sleep(3)
         # resume promoted jobs on V100, make sure the gpu is idle
         for job_new in promoted[:]:
             if finish_dict['job'+job_new] != 1:
