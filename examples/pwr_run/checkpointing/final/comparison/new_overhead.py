@@ -11,51 +11,40 @@ with open('../feedback_inverse/logs/feedback_inverse_overhead.json', 'r') as fp:
     feedback_overhead = json.load(fp)
 with open('../final4_new/logs/final4_new_overhead.json', 'r') as fp:
     scheme_overhead = json.load(fp)
-with open('../no_safeguard/logs/no_safeguard_overhead.json', 'r') as fp:
-    no_safeguard_overhead = json.load(fp)
-with open('../no_threshold/logs/no_threshold_overhead.json', 'r') as fp:
-    no_threshold_overhead = json.load(fp)
+with open('../random/logs/random_overhead.json', 'r') as fp:
+    baseline_plus_overhead = json.load(fp)
 
 with open('../feedback_inverse/logs/feedback_inverse_K80_time.json', 'r') as fp:
     feedback_K80_time = json.load(fp)
 with open('../final4_new/logs/final4_new_K80_time.json', 'r') as fp:
     scheme_K80_time = json.load(fp)
-with open('../no_safeguard/logs/no_safeguard_K80_time.json', 'r') as fp:
-    no_safeguard_K80_time = json.load(fp)
-with open('../no_threshold/logs/no_threshold_K80_time.json', 'r') as fp:
-    no_threshold_K80_time = json.load(fp)
+with open('../random/logs/random_K80_time.json', 'r') as fp:
+    baseline_plus_K80_time = json.load(fp)
 
 with open('../feedback_inverse/logs/feedback_inverse_V100_time.json', 'r') as fp:
     feedback_V100_time = json.load(fp)
 with open('../final4_new/logs/final4_new_V100_time.json', 'r') as fp:
     scheme_V100_time = json.load(fp)
-with open('../no_safeguard/logs/no_safeguard_V100_time.json', 'r') as fp:
-    no_safeguard_V100_time = json.load(fp)
-with open('../no_threshold/logs/no_threshold_V100_time.json', 'r') as fp:
-    no_threshold_V100_time = json.load(fp)
+with open('../random/logs/random_V100_time.json', 'r') as fp:
+    baseline_plus_V100_time = json.load(fp)
 
 with open('../feedback_inverse/logs/feedback_inverse_k80_1st.json', 'r') as fp:
     feedback_k80_1st = json.load(fp)
 with open('../final4_new/logs/final4_new_k80_1st.json', 'r') as fp:
     scheme_k80_1st = json.load(fp)
-with open('../no_safeguard/logs/no_safeguard_k80_1st.json', 'r') as fp:
-    no_safeguard_k80_1st = json.load(fp)
-with open('../no_threshold/logs/no_threshold_k80_1st.json', 'r') as fp:
-    no_threshold_k80_1st = json.load(fp)
+with open('../random/logs/random_k80_1st.json', 'r') as fp:
+    baseline_plus_k80_1st = json.load(fp)
 
 with open('../feedback_inverse/logs/feedback_inverse_v100_1st.json', 'r') as fp:
     feedback_v100_1st = json.load(fp)
 with open('../final4_new/logs/final4_new_v100_1st.json', 'r') as fp:
     scheme_v100_1st = json.load(fp)
-with open('../no_safeguard/logs/no_safeguard_v100_1st.json', 'r') as fp:
-    no_safeguard_v100_1st = json.load(fp)
-with open('../no_threshold/logs/no_threshold_v100_1st.json', 'r') as fp:
-    no_threshold_v100_1st = json.load(fp)
+with open('../random/logs/random_v100_1st.json', 'r') as fp:
+    baseline_plus_v100_1st = json.load(fp)
 
 print('feedback old average', str(feedback_overhead['average']))
 print('scheme old average', str(scheme_overhead['average']))
-print('no_threshold old average', str(no_threshold_overhead['average']))
-print('no_safeguard old average', str(no_safeguard_overhead['average']))
+print('baseline_plus old average', str(baseline_plus_overhead['average']))
 
 with open('old_overhead/feedback_K80_time.json', 'w') as fp:
     json.dump(feedback_K80_time, fp, indent=4)
@@ -71,20 +60,12 @@ with open('old_overhead/scheme_V100_time.json', 'w') as fp:
 with open('old_overhead/scheme_overhead.json', 'w') as fp:
     json.dump(scheme_overhead, fp, indent=4)
 
-with open('old_overhead/no_threshold_K80_time.json', 'w') as fp:
-    json.dump(no_threshold_K80_time, fp, indent=4)
-with open('old_overhead/no_threshold_V100_time.json', 'w') as fp:
-    json.dump(no_threshold_V100_time, fp, indent=4)
-with open('old_overhead/no_threshold_overhead.json', 'w') as fp:
-    json.dump(no_threshold_overhead, fp, indent=4)
-
-with open('old_overhead/no_safeguard_K80_time.json', 'w') as fp:
-    json.dump(no_safeguard_K80_time, fp, indent=4)
-with open('old_overhead/no_safeguard_V100_time.json', 'w') as fp:
-    json.dump(no_safeguard_V100_time, fp, indent=4)
-with open('old_overhead/no_safeguard_overhead.json', 'w') as fp:
-    json.dump(no_safeguard_overhead, fp, indent=4)
-
+with open('old_overhead/baseline_plus_K80_time.json', 'w') as fp:
+    json.dump(baseline_plus_K80_time, fp, indent=4)
+with open('old_overhead/baseline_plus_V100_time.json', 'w') as fp:
+    json.dump(baseline_plus_V100_time, fp, indent=4)
+with open('old_overhead/baseline_plus_overhead.json', 'w') as fp:
+    json.dump(baseline_plus_overhead, fp, indent=4)
 
 with open('v100_time.json', 'r') as fp:
     v100_epoch = json.load(fp)
@@ -162,52 +143,38 @@ for i in range(100):
         v100_1st.pop(0)
         v100_waste = np.sum(v100_1st) - v100_epoch_time * len(v100_1st)
     scheme_V100_time[job] -= v100_waste
-    scheme_overhead[job] += v100_waste + k80_waste 
+    scheme_overhead[job] += v100_waste + k80_waste
 
-    k80_1st = no_threshold_k80_1st[job]
-    if len(k80_1st) == 0:
-        k80_waste = 0
-    else:
-        k80_waste = np.sum(k80_1st) - k80_epoch_time * len(k80_1st)
-    no_threshold_K80_time[job] -= k80_waste
-    v100_1st = no_threshold_v100_1st[job]
-    if len(v100_1st) == 1:
-        v100_waste = 0
-    elif len(v100_1st) > 1:
-        v100_1st.pop(0)
-        v100_waste = np.sum(v100_1st) - v100_epoch_time * len(v100_1st)
-    no_threshold_V100_time[job] -= v100_waste
-    no_threshold_overhead[job] += v100_waste + k80_waste 
+    ##############################################################
 
-    k80_1st = no_safeguard_k80_1st[job]
-    if len(k80_1st) == 0:
-        k80_waste = 0
-    else:
-        k80_waste = np.sum(k80_1st) - k80_epoch_time * len(k80_1st)
-    no_safeguard_K80_time[job] -= k80_waste
-    v100_1st = no_safeguard_v100_1st[job]
-    if len(v100_1st) == 1:
+    k80_waste = 0
+    baseline_plus_K80_time[job] -= k80_waste
+    v100_1st = baseline_plus_v100_1st[job]
+    original_overhead = baseline_plus_overhead[job]
+    if original_overhead == 0:
         v100_waste = 0
-    elif len(v100_1st) > 1:
-        v100_1st.pop(0)
-        v100_waste = np.sum(v100_1st) - v100_epoch_time * len(v100_1st)
-    no_safeguard_V100_time[job] -= v100_waste
-    no_safeguard_overhead[job] += v100_waste + k80_waste
+    elif original_overhead > 0:
+        if len(v100_1st) == 1:
+            v100_waste = np.sum(v100_1st) - v100_epoch_time * len(v100_1st)
+        else:
+            v100_waste = 0
+            print('error, v100 1st epoch time should exit')
+    baseline_plus_K80_time[job] -= k80_waste
+    baseline_plus_V100_time[job] -= v100_waste
+    baseline_plus_overhead[job] += v100_waste + k80_waste
+
 
 # remove average number
 feedback_overhead.pop('average')
 scheme_overhead.pop('average')
-no_threshold_overhead.pop('average')
-no_safeguard_overhead.pop('average')
+baseline_plus_overhead.pop('average')
 
 average = np.mean(list(feedback_overhead.values()))
 print('new feedback average', str(average))
 average = np.mean(list(scheme_overhead.values()))
 print('new scheme average', str(average))
-average = np.mean(list(no_threshold_overhead.values()))
-print('new no_threshold average', str(average))
-average = np.mean(list(no_safeguard_overhead.values()))
-print('new no_safeguard average', str(average))
+average = np.mean(list(baseline_plus_overhead.values()))
+print('new baseline_plus average', str(average))
 
 with open('new_overhead/feedback_K80_time.json', 'w') as fp:
     json.dump(feedback_K80_time, fp, indent=4)
@@ -223,17 +190,10 @@ with open('new_overhead/scheme_V100_time.json', 'w') as fp:
 with open('new_overhead/scheme_overhead.json', 'w') as fp:
     json.dump(scheme_overhead, fp, indent=4)
 
-with open('new_overhead/no_threshold_K80_time.json', 'w') as fp:
-    json.dump(no_threshold_K80_time, fp, indent=4)
-with open('new_overhead/no_threshold_V100_time.json', 'w') as fp:
-    json.dump(no_threshold_V100_time, fp, indent=4)
-with open('new_overhead/no_threshold_overhead.json', 'w') as fp:
-    json.dump(no_threshold_overhead, fp, indent=4)
-
-with open('new_overhead/no_safeguard_K80_time.json', 'w') as fp:
-    json.dump(no_safeguard_K80_time, fp, indent=4)
-with open('new_overhead/no_safeguard_V100_time.json', 'w') as fp:
-    json.dump(no_safeguard_V100_time, fp, indent=4)
-with open('new_overhead/no_safeguard_overhead.json', 'w') as fp:
-    json.dump(no_safeguard_overhead, fp, indent=4)
+with open('new_overhead/baseline_plus_K80_time.json', 'w') as fp:
+    json.dump(baseline_plus_K80_time, fp, indent=4)
+with open('new_overhead/baseline_plus_V100_time.json', 'w') as fp:
+    json.dump(baseline_plus_V100_time, fp, indent=4)
+with open('new_overhead/baseline_plus_overhead.json', 'w') as fp:
+    json.dump(baseline_plus_overhead, fp, indent=4)
 

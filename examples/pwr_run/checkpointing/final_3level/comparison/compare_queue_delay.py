@@ -11,7 +11,7 @@ with open('../unaware/logs/unaware_queue_delay.json', 'r') as fp:
     baseline_only = json.load(fp)
 with open('../random/logs/random_queue_delay.json', 'r') as fp:
     baseline_plus_only = json.load(fp)
-with open('../final4_3level/logs/final4_3level_queue_delay.json', 'r') as fp:
+with open('../final4_3level_new/logs/final4_3level_queue_delay.json', 'r') as fp:
     scheme_only = json.load(fp)
 
 baseline = []

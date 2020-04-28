@@ -13,7 +13,7 @@ with open('../unaware/logs/unaware_JCT.json', 'r') as fp:
     baseline_only = json.load(fp)
 with open('../random/logs/random_JCT.json', 'r') as fp:
     baseline_plus_only = json.load(fp)
-with open('../final4_3level/logs/final4_3level_JCT.json', 'r') as fp:
+with open('../final4_3level_new/logs/final4_3level_JCT.json', 'r') as fp:
     scheme_only = json.load(fp)
 
 with open('v100_only_JCT.json', 'r') as fp:
