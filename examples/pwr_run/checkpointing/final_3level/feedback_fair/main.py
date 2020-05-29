@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('job_queue_50.json', 'r') as fp:#TODO
+with open('job_queue.json', 'r') as fp:#TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -158,10 +158,10 @@ step1_job_V100 = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2179', 'c2183']
-P100_node = ['c2189']
-V100_node = ['d1015']
-host_node = 'c0172'
+K80_node = ['c2180', 'c2181']
+P100_node = ['c2186']
+V100_node = ['d1013']
+host_node = 'c0151'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
