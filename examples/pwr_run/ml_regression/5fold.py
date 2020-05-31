@@ -87,21 +87,24 @@ y_data = []
 
 for key in all_pwr:
 #    if ('mnasnet' not in key and 'mobilenet' not in key):
-    K80_energy = all_pwr[key]['K80'] * all_time[key]['K80'] / 1000
-    V100_energy = all_pwr[key]['V100'] * all_time[key]['V100'] / 1000
     for i in all_pwr[key]['V100'].tolist(): # power
         x1_data.append(i)
-    for i in (50 / all_time[key]['V100']).tolist(): # speed
+    for i in (1 / all_time[key]['V100']).tolist(): # speed
+    #for i in (all_time[key]['V100']).tolist():
         x2_data.append(i)
     for i in (all_util[key]['V100']).tolist(): # utilization
         x3_data.append(i)
     for i in ((all_time[key]['K80'] - all_time[key]['V100']) / all_time[key]['K80'] * 100).tolist(): # speed up  
         y_data.append(i)
 
+x1_norm = [(i - min(x1_data)) / (max(x1_data) - min(x1_data)) for i in x1_data]
+x2_norm = [(i - min(x2_data)) / (max(x2_data) - min(x2_data)) for i in x2_data]
+x3_norm = [(i - min(x3_data)) / (max(x3_data) - min(x3_data)) for i in x3_data]
+
 # create training data
 x_data = []
-for i in range(len(x1_data)):
-    x_data.append([x1_data[i], x2_data[i], x3_data[i]])
+for i in range(len(x1_norm)):
+    x_data.append([x1_norm[i], x2_norm[i], x3_norm[i]])
 #    x_data.append([x1_data[i], x3_data[i]])
 
 kf = KFold(n_splits=5, shuffle=True)
@@ -122,7 +125,7 @@ for train_index, test_index in kf.split(x_data):
     y_test_group.append(y_test)
  
 rmse_val = []
-for K in range(10):
+for K in range(20):
     K += 1
     model = neighbors.KNeighborsRegressor(n_neighbors = K, weights='distance')
     err_list = []
@@ -139,6 +142,8 @@ for K in range(10):
         err_list.append(err)
     rmse_val.append(np.mean(err)) #store rmse values
     print('RMSE value for k= ' , K , 'is:', err)
+print('RMSE min= ', np.min(rmse_val))
+
 
 
 

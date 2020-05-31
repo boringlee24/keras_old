@@ -29,7 +29,8 @@ for tc in dirs:
 
     wall_time = [t.wall_time for t in iterator.Scalars(tag)]
     relative_time = [(time - wall_time[0])/3600 for time in wall_time]
-    time_all.append(relative_time[len(relative_time) - 1])
+    num_epoch = len(relative_time)
+    time_all.append(relative_time[num_epoch - 1] / (num_epoch - 1))
 
 df = pd.DataFrame(time_all, columns=["time(h)"])
 df.to_csv(result_base_dir + 'csv/' + testcase + '.csv', index=False)

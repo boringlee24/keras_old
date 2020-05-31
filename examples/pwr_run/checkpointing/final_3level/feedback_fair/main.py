@@ -161,7 +161,7 @@ pc_job = []
 K80_node = ['c2180', 'c2181']
 P100_node = ['c2186']
 V100_node = ['d1013']
-host_node = 'c0151'
+host_node = 'c0147'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -945,6 +945,7 @@ while True:
                 for gpu, job in K80_job.items():
                     if job == 'idle': # if gpu idle, schedule new job here
                         real_node, real_gpu = K80_LUT(gpu)
+                        time.sleep(3) # don't do it too often
                         resume_job(real_node, real_gpu, job_new)
                         num_mig[job_new] += 1
                         K80_job[gpu] = job_new

@@ -11,7 +11,7 @@ with open('../unaware/logs/unaware_queue_delay.json', 'r') as fp:
     baseline_only = json.load(fp)
 with open('../random/logs/random_queue_delay.json', 'r') as fp:
     baseline_plus_only = json.load(fp)
-with open('../feedback_inverse/logs/feedback_inverse_queue_delay.json', 'r') as fp:
+with open('../feedback_fair/logs/feedback_fair_queue_delay.json', 'r') as fp:
     feedback_only = json.load(fp)
 with open('../final4_new/logs/final4_new_queue_delay.json', 'r') as fp:
     scheme_only = json.load(fp)

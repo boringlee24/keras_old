@@ -90,23 +90,31 @@ for key in all_pwr:
     V100_energy = all_pwr[key]['V100'] * all_time[key]['V100'] / 1000
     for i in all_pwr[key]['V100'].tolist(): # power
         x1_data.append(i)
-    for i in (50 / all_time[key]['V100']).tolist(): # speed
+    for i in (1 / all_time[key]['V100']).tolist(): # speed
         x2_data.append(i)
     for i in (all_util[key]['V100']).tolist(): # utilization
         x3_data.append(i)
     for i in ((all_time[key]['K80'] - all_time[key]['V100']) / all_time[key]['K80'] * 100).tolist(): # speed up  
         y_data.append(i)
+pdb.set_trace()
+x1_norm = [(i - min(x1_data)) / (max(x1_data) - min(x1_data)) for i in x1_data]
+x2_norm = [(i - min(x2_data)) / (max(x2_data) - min(x2_data)) for i in x2_data]
+x3_norm = [(i - min(x3_data)) / (max(x3_data) - min(x3_data)) for i in x3_data]
 
 # create training data
 x_data = []
-for i in range(len(x1_data)):
-    x_data.append([x1_data[i], x2_data[i], x3_data[i]])
-#    x_data.append([x1_data[i], x3_data[i]])
+for i in range(len(x1_norm)):
+    x_data.append([x1_norm[i], x2_norm[i], x3_norm[i]])
 
 x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.3)
 
-with open('x_data.json', 'w') as outfile:
-    json.dump(x_data, outfile)
+with open('x1_data.json', 'w') as outfile:
+    json.dump(x1_data, outfile)
+with open('x2_data.json', 'w') as outfile:
+    json.dump(x2_data, outfile)
+with open('x3_data.json', 'w') as outfile:
+    json.dump(x3_data, outfile)
+
 with open('y_data.json', 'w') as outfile:
     json.dump(y_data, outfile)
 #with open('x_data.json') as f:
@@ -114,7 +122,7 @@ with open('y_data.json', 'w') as outfile:
 #with open('y_data.json') as f:
 #    y_data = json.load(f)
 #x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.3)
-  
+
 rmse_val = [] #to store rmse values for different k
 for K in range(20):
     K = K+1
@@ -128,8 +136,8 @@ for K in range(20):
     print('RMSE value for k= ' , K , 'is:', err)
 
 xx_data = []
-for i in range(len(x1_data)):
-    xx_data.append([x1_data[i]])
+for i in range(len(x1_norm)):
+    xx_data.append([x1_norm[i]])
 
 # now compare with liear regression
 x_train, x_test, y_train, y_test = train_test_split(xx_data, y_data, test_size=0.3)
