@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('job_queue_50.json', 'r') as fp:
+with open('job_queue.json', 'r') as fp:
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -119,15 +119,11 @@ speedup_dict = {}
 for item in queue:
     speedup_dict[str(item)] = 0 
 
-birthplace = {}
-for item in queue:
-    birthplace[str(item)] = 'none' 
-
 index = 0
 all_jobs_started = False
 
-K80_cap = 8
-V100_cap = 4
+K80_cap = 16
+V100_cap = 8
 K80_used = 0
 V100_used = 0
 
@@ -142,8 +138,8 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2176']
-V100_node = ['d1008']
+K80_node = ['c2180', 'c2181']
+V100_node = ['d1023', 'd1013']
 host_node = 'c0147'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
@@ -206,7 +202,7 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_li
         #    V100_qual.remove('idle')
         V100_pool = list(set(V100_qual).union(promote_list))       
         if num_promote <= V100_vacant: # promote all jobs as well
-            return promote_list[:], force_demote[:]
+            return promote_list, force_demote
         else: # promote the top 4 jobs            
             pool_dict = {}
             V100_avail = V100_vacant + len(V100_qual)
@@ -245,6 +241,41 @@ def max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_li
     else:
         raise ValueError('Bug with max speedup promotion, condition not considered')
 
+def min_speedup_demotion(K80_job, demote_list):
+    num_demote = len(demote_list)
+    global speedup_dict
+
+    # selectively demote among active K80 jobs and demote list jobs
+    K80_qual = list(set(list(K80_job.values())))
+    if 'idle' in K80_qual:
+        K80_qual.remove('idle')
+    K80_pool = list(set(K80_qual).union(demote_list))       
+    if len(K80_pool) <= K80_cap: # demote all jobs, no promotion
+        return [], demote_list[:] # must return a copy, otherwise the output points to the same address as input
+    else: # promote the top 4 jobs            
+        pool_dict = {}
+        for job in K80_pool:
+            if job in speedup_dict:
+                pool_dict[job] = speedup_dict[job]        
+        sorted_pool = sorted(pool_dict, key=pool_dict.get, reverse=False)[:K80_cap] # 8 least speedup jobs
+        demotion_list = list(set(demote_list).intersection(sorted_pool))
+        promotion_list = list(set(list(K80_job.values())).difference(sorted_pool))
+        if 'idle' in promotion_list:
+            promotion_list.remove('idle') # this includes force demotion
+        # lazy migration, for every V100 job from high speeup to low speedup and not in sorted_pool, compare it with
+        # K80 jobs in sorted_pool, from low speedup to high speedup. If difference within 0.2, replace the K80 job
+        # in sorted pool
+        for job_demote in sorted(pool_dict, key=pool_dict.get, reverse=True):
+            if job_demote in demotion_list:
+                for job_promote in sorted(pool_dict, key=pool_dict.get, reverse=False):
+                    if job_promote in promotion_list:
+                        if speedup_dict[job_promote] - speedup_dict[job_demote] < 0.05:
+                            demotion_list.remove(job_demote)
+                            promotion_list.remove(job_promote)
+                            break
+
+        return promotion_list, demotion_list
+
 def save_job(node, job): # save_job('c2176', '50')
     # first wait for the job to be qualified for checkpointing
     while True: # wait for ckpt_qual to be available
@@ -275,11 +306,10 @@ def start_job(node, gpu, job):
 
 # function that checks the tensorboard log of currently running jobs and logs jobs that have finished the first epoch
 # in a global list. Once it's done, it will be in a queue to be promoted to V100 for 3 more epochs.
-def check_step1_complete(job_list, node):
+def check_step1_complete(job_list):
     log_path = '/scratch/li.baol/tsrbrd_log/job_runs/' + testcase + '/'
     global step1_job
     global V100_epoch_time
-    global K80_epoch_time
     for job in job_list:
         if job not in step1_job and job != 'idle':
             log_dir = log_path + 'job' + job + '/*'
@@ -292,16 +322,13 @@ def check_step1_complete(job_list, node):
                 try:
                     if len(iterator.Scalars(tag)) > 2: # this way we can collect one epoch time
                         wall_time = [t.wall_time for t in iterator.Scalars(tag)]
-                        if node in V100_node:
-                            V100_epoch_time[job] = wall_time[1] - wall_time[0]
-                        elif node in K80_node:
-                            K80_epoch_time[job] = wall_time[1] - wall_time[0]                           
+                        V100_epoch_time[job] = wall_time[1] - wall_time[0]
                         step1_job.append(job)
                         print('job' + job + ' has reached step1 complete')
                 except Exception:
                     pass
 
-def check_step2_complete(job_list, node):
+def check_step2_complete(job_list):
     log_path = '/scratch/li.baol/tsrbrd_log/job_runs/' + testcase + '/'
     global step1_job
     global step2_job
@@ -321,14 +348,9 @@ def check_step2_complete(job_list, node):
                 try:
                     if len(iterator.Scalars(tag)) > 2: # this way we can collect one epoch time
                         wall_time = [t.wall_time for t in iterator.Scalars(tag)]
-                        if node in K80_node:
-                            K80_epoch_time[job] = wall_time[1] - wall_time[0]
-                            V100_time_step2 = V100_epoch_time[job]
-                            K80_time_step2 = wall_time[1] - wall_time[0]
-                        elif node in V100_node:
-                            V100_epoch_time[job] = wall_time[1] - wall_time[0]
-                            K80_time_step2 = K80_epoch_time[job]
-                            V100_time_step2 = wall_time[1] - wall_time[0]
+                        K80_epoch_time[job] = wall_time[1] - wall_time[0]
+                        V100_time_step2 = V100_epoch_time[job]
+                        K80_time_step2 = wall_time[1] - wall_time[0]
                         speedup = (K80_time_step2 - V100_time_step2) / K80_time_step2
                         speedup_dict[job] = speedup
                         step2_job.append(job)
@@ -496,80 +518,39 @@ while True:
 
     ################ check step1 finished job of K80 jobs and step 2 of V100 #################
 
-    check_step1_complete(list(V100_job.values()), V100_node[0])
-    check_step2_complete(list(K80_job.values()), K80_node[0])   
+    check_step1_complete(list(V100_job.values()))
+    check_step2_complete(list(K80_job.values()))   
 
     for gpu, job in V100_job.items():
         if job not in qualified_job and job != 'idle':
             if job in step1_job:
                 qualified_job.append(job)
                 speedup_dict[job] = 0
-                print('job ' + job + ' has been qualified for demotion to K80')
+                print('job' + job + ' has been qualified for demotion')
 
-    check_step1_complete(list(K80_job.values()), K80_node[0])
-    check_step2_complete(list(V100_job.values()), V100_node[0])   
+    ############### record number of newly arrived jobs ################
 
-    for gpu, job in K80_job.items():
-        if job not in qualified_job and job != 'idle':
-            if job in step1_job:
-                qualified_job.append(job)
-                speedup_dict[job] = 1
-                print('job ' + job + ' has been qualified for promotion to V100')
-
-    ############### start new jobs on idle K80s and V100s before promoting K80 jobs to idle V100 ################
-
-    if V100_used < V100_cap:
-        V100_free = V100_cap - V100_used
-        for i in range(V100_free):
-            time_passed = int(time.time() - queue_timer)
-            if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
-                job_new = str(queue[index])
-                for gpu, job in V100_job.items():
-                    if job == 'idle': # schedule new job here if idle
-                        real_node, real_gpu = V100_LUT(gpu)
-                        start_job(real_node, real_gpu, job_new)
-                        birthplace[job_new] = real_node
-                        measure_job(real_node, real_gpu, job_new)
-                        V100_job[gpu] = job_new
-                        job_start[job_new] = time.time()
-                        queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])                    
-                        V100_start_time[job_new] = time.time()
-                        index += 1
-                        V100_used += 1
-                        time.sleep(5) # don't communicate too often
-                        break
-    if K80_used < K80_cap:
-        K80_free = K80_cap - K80_used
-        for i in range(K80_free):
-            time_passed = int(time.time() - queue_timer)
-            if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
-                job_new = str(queue[index])
-                for gpu, job in K80_job.items():
-                    if job == 'idle': # schedule new job here if idle
-                        real_node, real_gpu = K80_LUT(gpu)
-                        start_job(real_node, real_gpu, job_new)
-                        birthplace[job_new] = real_node
-                        measure_job(real_node, real_gpu, job_new)
-                        K80_job[gpu] = job_new
-                        job_start[job_new] = time.time()
-                        queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])                    
-                        K80_start_time[job_new] = time.time()
-                        index += 1
-                        K80_used += 1
-                        time.sleep(5) # don't communicate too often
-                        break
+    new_arrival = 0
+    index_cpy = index
+    while True:
+        time_passed = int(time.time() - queue_timer)
+        if index_cpy >= len(queue):
+            break
+        elif time_passed >= queue_dict[queue[index_cpy]]:
+            new_arrival += 1
+            index_cpy += 1
+        elif time_passed < queue_dict[queue[index_cpy]]:
+            break
 
     ################ make promotion decisions ########################
 
     V100_free = V100_cap - V100_used
     K80_free = K80_cap - K80_used
-    promote_list = [] #list(set(qualified_job).intersection(list(K80_job.values())).difference(pc_job))
-    for gpu, job in K80_job.items():
-        if job != 'idle':
-            if job in step2_job and len(ovhd_total[job]) > 0:
-                promote_list.append(job)
-            elif job not in step2_job and job in qualified_job and birthplace[job] in K80_node:
-                promote_list.append(job)
+    if new_arrival == 0:
+    # this returns available jobs for promotion. Has to be qualified, and currently in K80, but not practically complete
+        promote_list = list(set(qualified_job).intersection(list(K80_job.values())).difference(pc_job))
+    else:
+        promote_list = []
 
     # this returns job forced to be demoted. Currently in V100, and is practically complete
     force_demote = list(set(list(V100_job.values())).intersection(pc_job))
@@ -577,7 +558,6 @@ while True:
     # look at demote list
     for gpu, job in V100_job.items():
         if job != 'idle':
-            # for jobs who have finished profiling, added the job
             if job not in demote_list and job in step2_job and len(ovhd_total[job]) > 0:
                 job_speedup = speedup_dict[job] # 0.7
                 job_ovhd = np.mean(ovhd_total[job]) # 100
@@ -588,15 +568,33 @@ while True:
                     demote_list.append(job)
                     print('job' + job + 'qualified for demote for passing demote qualify time ' +
                     str(int(demote_qualify_time)))
-            # for jobs who have not finished profiling, add the job if it's qualified and it started on V100
-            elif job not in demote_list and job not in step2_job and job in qualified_job and birthplace[job] in V100_node:
+            elif job not in demote_list and job not in step2_job and job in qualified_job:
                 demote_list.append(job)
                 print('job' + job + 'qualified for demote for profiling')
 
     if len(promote_list) > 0 or len(demote_list) > 0:
-        promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote)
+        if new_arrival == 0:
+            promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote)
+        else:
+            promoted, demoted = min_speedup_demotion(K80_job, demote_list)
+            if len(demoted) - len(promoted) > new_arrival - V100_free:
+                # demote only # of new arrivals + # of promoted
+                print('some demoted canceled because more demoted than new arrival + promoted, arrival = ' +
+                str(new_arrival))
+                print('original demotion: ' + str(demoted))
+                demoted_pool = {}
+                for job in demoted:
+                    if job in speedup_dict:
+                        demoted_pool[job] = speedup_dict[job]
+                if len(promoted) + new_arrival - V100_free > 0:
+                    demoted = sorted(demoted_pool, key=demoted_pool.get, reverse=False)[:(len(promoted)+new_arrival-V100_free)]
+                else:
+                    demoted = []
+                print('new demotion: ' + str(demoted))
 
         if len(promoted) > 0:
+            if new_arrival == 0:
+                print('no new job arrivals')
             print('promoted jobs: ', promoted)
         if len(demoted) > 0:
             print('demoted jobs: ', demoted)
@@ -604,9 +602,6 @@ while True:
         checkpoint_finish_check = []
         for gpu, job in K80_job.items():
             if job in promoted:
-                # make sure promoted step1 job doesn't get demoted back before finishing profiling
-                if job in step1_job and job not in step2_job:
-                    speedup_dict[job] = 1
                 real_node, real_gpu = K80_LUT(gpu)
                 save_job(real_node, job)
                 if finish_dict['job'+job] != 1:
@@ -646,8 +641,6 @@ while True:
                 if len(checkpoint_finish_check) == 0:
                     break
 
-        # give it some time to cleanup old checkpointed jobs
-        time.sleep(3)
         # resume promoted jobs on V100, make sure the gpu is idle
         for job_new in promoted[:]:
             if finish_dict['job'+job_new] != 1:
@@ -682,6 +675,33 @@ while True:
         # perform a check, make sure all promoted/demoted jobs are scheduled
         if len(promoted) > 0 or len(demoted) > 0:
             raise ValueError('Bug with promotion scheme, more jobs than free gpus')
+
+    ################ submit new jobs to vacant K80 GPUs ############################
+
+    # check if there are vacant K80s
+    ## yes: submit jobs from queue
+    ## no: do nothing
+    if not all_jobs_started:
+        if V100_used < V100_cap:
+            V100_free = V100_cap - V100_used
+            for i in range(V100_free):
+                time_passed = int(time.time() - queue_timer)
+                if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
+                    job_new = str(queue[index])
+                    for gpu, job in V100_job.items():
+                        if job == 'idle': # schedule new job here if idle
+                            real_node, real_gpu = V100_LUT(gpu)
+                            start_job(real_node, real_gpu, job_new)
+                            V100_job[gpu] = job_new
+                            job_start[job_new] = time.time()
+                            queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])                    
+                            V100_start_time[job_new] = time.time()
+                            index += 1
+                            V100_used += 1
+                            time.sleep(5) # don't communicate too often
+                            break
+                elif index >= len(queue):
+                    all_jobs_started = True
 
     ############## monitor GPU usage ############
 
@@ -739,7 +759,6 @@ predict_name = 'predict.json'
 demote_list_name = 'demote_list.json'
 completion_name = 'completion.json'
 queue_delay_name = testcase + '_queue_delay.json'
-birthplace_name = testcase + '_birthplace.json'
 
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
@@ -773,16 +792,12 @@ with open(v100_1st_name, 'w') as fp3:
     json.dump(v100_1st, fp3, sort_keys=True, indent=4)
 with open(speedup_name, 'w') as fp1:
    json.dump(speedup_dict, fp1, sort_keys=True, indent=4)
-with open(predict_name, 'w') as fp1:
-   json.dump(predict_dict, fp1, sort_keys=True, indent=4)
 with open(demote_list_name, 'w') as fp1:
    json.dump(demote_list, fp1, sort_keys=True, indent=4)
 with open(completion_name, 'w') as fp1:
    json.dump(completion, fp1, sort_keys=True, indent=4)
 with open(queue_delay_name, 'w') as fp1:
    json.dump(queue_delay, fp1, sort_keys=True, indent=4)
-with open(birthplace_name, 'w') as fp1:
-   json.dump(birthplace, fp1, sort_keys=True, indent=4)
 
 gpu_usage_time = np.asarray(gpu_usage_time)
 gpu_usage = np.asarray(gpu_usage)
