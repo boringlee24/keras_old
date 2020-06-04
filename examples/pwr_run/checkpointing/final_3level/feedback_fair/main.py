@@ -834,19 +834,21 @@ while True:
     P100_free = P100_cap - P100_used
     K80_free = K80_cap - K80_used
 
-    promote_list = []
+    K80_promote_list = []
     for gpu, job in K80_job.items():
         if job != 'idle':
             if job in step2_job and len(ovhd_total[job]) > 0:
-                promote_list.append(job)
+                K80_promote_list.append(job)
             elif job not in step2_job and job in qualified_job and birthplace[job] in K80_node:
-                promote_list.append(job)
+                K80_promote_list.append(job)
+    if all_jobs_started and K80_free == K80_cap:
+        P100_promote_list = list(set(qualified_job).intersection(list(P100_job.values())))
 
     # look at demote list
     for gpu, job in V100_job.items():
         if job != 'idle' and job in step1_job_V100:
             # for jobs who have finished profiling, add the job
-            if job not in V100_demote_list and job in step2_job and len(ovhd_total[job]) > 0:
+            if job not in V100_demote_list and job in step2_job and len(ovhd_total[job]) > 0 and speedup_dict_V100[job] != 0:
                 job_ovhd = np.mean(ovhd_total[job]) # 100
                 if len(k80_1st[job]) > 0:
                     k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
@@ -868,7 +870,7 @@ while True:
     for gpu, job in P100_job.items():
         if job != 'idle' and job in step1_job_P100:
             # for jobs who have finished profiling, add the job
-            if job not in P100_demote_list and job in step2_job and len(ovhd_total[job]) > 0:
+            if job not in P100_demote_list and job in step2_job and len(ovhd_total[job]) > 0 and speedup_dict_P100[job] != 0:
                 job_ovhd = np.mean(ovhd_total[job]) # 100
                 if len(k80_1st[job]) > 0:
                     k80_1st_ovhd = np.mean(k80_1st[job]) - K80_epoch_time[job]
