@@ -14,7 +14,10 @@ with open('../unaware/logs/unaware_JCT.json', 'r') as fp:
 with open('../random/logs/random_JCT.json', 'r') as fp:
     baseline_plus_only = json.load(fp)
 with open('../feedback_fair/logs/feedback_fair_JCT.json', 'r') as fp:
+    feedback_new_only = json.load(fp)
+with open('../feedback_inverse/logs/feedback_inverse_JCT.json', 'r') as fp:
     feedback_only = json.load(fp)
+
 with open('../final4_new/logs/final4_new_JCT.json', 'r') as fp:
     scheme_only = json.load(fp)
 ##with open('../final4_new2/logs/final4_new2_JCT.json', 'r') as fp:
@@ -53,6 +56,7 @@ oracle = []
 baseline = []
 baseline_plus = []
 feedback = []
+feedback_new = []
 final1 = []
 final2 = []
 final1_test = []
@@ -84,6 +88,7 @@ for i in range(len(baseline_only)-1):
     baseline.append(baseline_only[job])
     baseline_plus.append(baseline_plus_only[job])
     feedback.append(feedback_only[job])
+    feedback_new.append(feedback_new_only[job])
     scheme.append(scheme_only[job])
     #epoch_boundary.append(epoch_boundary_only[job])
     start_on_both.append(start_on_both_only[job])
@@ -111,6 +116,7 @@ for i in range(len(baseline_only)-1):
 baseline = np.asarray(baseline)
 baseline_plus = np.asarray(baseline_plus)
 feedback = np.asarray(feedback)
+feedback_new = np.asarray(feedback_new)
 scheme = np.asarray(scheme)
 #epoch_boundary = np.asarray(epoch_boundary)
 start_on_both = np.asarray(start_on_both)
@@ -138,6 +144,11 @@ with open('JCT/baseline_plus_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(feedback)
 with open('JCT/feedback_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(feedback_new)
+with open('JCT/feedback_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -229,6 +240,7 @@ norm_oracle = []
 norm_baseline = []
 norm_baseline_plus = []
 norm_feedback = []
+norm_feedback_new = []
 norm_final1 = []
 norm_final2 = []
 norm_final1_test = []
@@ -255,6 +267,7 @@ norm_scheme_12p4_tuned = []
 v100_baseline = []
 v100_baseline_plus = []
 v100_feedback = []
+v100_feedback_new = []
 v100_scheme = []
 #v100_epoch_boundary = []
 v100_start_on_both = []
@@ -273,6 +286,7 @@ v100_scheme_12p4_tuned = []
 k80_baseline = []
 k80_baseline_plus = []
 k80_feedback = []
+k80_feedback_new = []
 k80_scheme = []
 #k80_epoch_boundary = []
 k80_start_on_both = []
@@ -293,6 +307,7 @@ for i in range(len(baseline)):
     norm_baseline.append(round(baseline_only[job]/baseline_only[job], 2))
     norm_baseline_plus.append(round(baseline_only[job]/baseline_plus_only[job], 2))
     norm_feedback.append(round(baseline_only[job]/feedback_only[job], 2))
+    norm_feedback_new.append(round(baseline_only[job]/feedback_new_only[job], 2))
     norm_scheme.append(round(baseline_only[job]/scheme_only[job], 2))
 #    norm_epoch_boundary.append(round(baseline_only[job]/epoch_boundary_only[job], 2))
     norm_start_on_both.append(round(baseline_only[job]/start_on_both_only[job], 2))
@@ -312,6 +327,7 @@ for i in range(len(baseline)):
         v100_baseline.append(round(v100_only[job]/baseline_only[job], 2))   
         v100_baseline_plus.append(round(v100_only[job]/baseline_plus_only[job], 2))
         v100_feedback.append(round(v100_only[job]/feedback_only[job], 2))
+        v100_feedback_new.append(round(v100_only[job]/feedback_new_only[job], 2))
         v100_scheme.append(round(v100_only[job]/scheme_only[job], 2))
 #        v100_epoch_boundary.append(round(v100_only[job]/epoch_boundary_only[job], 2))
         v100_start_on_both.append(round(v100_only[job]/start_on_both_only[job], 2))
@@ -330,6 +346,7 @@ for i in range(len(baseline)):
         k80_baseline.append(round(k80_only[job]/baseline_only[job], 2))   
         k80_baseline_plus.append(round(k80_only[job]/baseline_plus_only[job], 2))
         k80_feedback.append(round(k80_only[job]/feedback_only[job], 2))
+        k80_feedback_new.append(round(k80_only[job]/feedback_new_only[job], 2))
         k80_scheme.append(round(k80_only[job]/scheme_only[job], 2))
 #        k80_epoch_boundary.append(round(k80_only[job]/epoch_boundary_only[job], 2))
         k80_start_on_both.append(round(k80_only[job]/start_on_both_only[job], 2))
@@ -352,6 +369,7 @@ for i in range(len(baseline)):
         v100_baseline.append(round(v100_joob/baseline_only[job], 2))   
         v100_baseline_plus.append(round(v100_joob/baseline_plus_only[job], 2))
         v100_feedback.append(round(v100_joob/feedback_only[job], 2))
+        v100_feedback_new.append(round(v100_joob/feedback_new_only[job], 2))
         v100_scheme.append(round(v100_joob/scheme_only[job], 2))
 #        v100_epoch_boundary.append(round(v100_joob/epoch_boundary_only[job], 2))
         v100_start_on_both.append(round(v100_joob/start_on_both_only[job], 2))
@@ -370,6 +388,7 @@ for i in range(len(baseline)):
         k80_baseline.append(round(k80_joob/baseline_only[job], 2))   
         k80_baseline_plus.append(round(k80_joob/baseline_plus_only[job], 2))
         k80_feedback.append(round(k80_joob/feedback_only[job], 2))
+        k80_feedback_new.append(round(k80_joob/feedback_new_only[job], 2))
         k80_scheme.append(round(k80_joob/scheme_only[job], 2))
 #        k80_epoch_boundary.append(round(k80_joob/epoch_boundary_only[job], 2))
         k80_start_on_both.append(round(k80_joob/start_on_both_only[job], 2))
@@ -398,6 +417,11 @@ with open('norm_JCT/baseline_plus_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(norm_feedback)
 with open('norm_JCT/feedback_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(norm_feedback_new)
+with open('norm_JCT/feedback_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
@@ -487,6 +511,11 @@ with open('v100_JCT/feedback_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
+cols = zip(v100_feedback_new)
+with open('v100_JCT/feedback_new_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
 cols = zip(v100_scheme)
 with open('v100_JCT/scheme_jct.csv', 'w') as f:
     writer = csv.writer(f)
@@ -570,6 +599,11 @@ with open('k80_JCT/baseline_plus_jct.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(k80_feedback)
 with open('k80_JCT/feedback_jct.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(k80_feedback_new)
+with open('k80_JCT/feedback_new_jct.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)

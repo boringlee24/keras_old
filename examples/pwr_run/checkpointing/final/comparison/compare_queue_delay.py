@@ -12,6 +12,8 @@ with open('../unaware/logs/unaware_queue_delay.json', 'r') as fp:
 with open('../random/logs/random_queue_delay.json', 'r') as fp:
     baseline_plus_only = json.load(fp)
 with open('../feedback_fair/logs/feedback_fair_queue_delay.json', 'r') as fp:
+    feedback_new_only = json.load(fp)
+with open('../feedback_inverse/logs/feedback_inverse_queue_delay.json', 'r') as fp:
     feedback_only = json.load(fp)
 with open('../final4_new/logs/final4_new_queue_delay.json', 'r') as fp:
     scheme_only = json.load(fp)
@@ -45,6 +47,7 @@ with open('../final5/sensitivity_logs/12_4/final5_queue_delay.json', 'r') as fp:
 baseline = []
 baseline_plus = []
 feedback = []
+feedback_new = []
 scheme = []
 #epoch_boundary = []
 start_on_both = []
@@ -65,6 +68,7 @@ for i in range(len(baseline_only)-1):
     baseline.append(baseline_only[job])
     baseline_plus.append(baseline_plus_only[job])
     feedback.append(feedback_only[job])
+    feedback_new.append(feedback_new_only[job])
     scheme.append(scheme_only[job])
 #    epoch_boundary.append(epoch_boundary_only[job])
     start_on_both.append(start_on_both_only[job])
@@ -83,6 +87,7 @@ for i in range(len(baseline_only)-1):
 baseline = np.asarray(baseline)
 baseline_plus = np.asarray(baseline_plus)
 feedback = np.asarray(feedback)
+feedback_new = np.asarray(feedback_new)
 scheme = np.asarray(scheme)
 #epoch_boundary = np.asarray(epoch_boundary)
 start_on_both = np.asarray(start_on_both)
@@ -110,6 +115,11 @@ with open('queue_delay/baseline_plus_queue_delay.csv', 'w') as f:
         writer.writerow(col)
 cols = zip(feedback)
 with open('queue_delay/feedback_queue_delay.csv', 'w') as f:
+    writer = csv.writer(f)
+    for col in cols:
+        writer.writerow(col)
+cols = zip(feedback_new)
+with open('queue_delay/feedback_new_queue_delay.csv', 'w') as f:
     writer = csv.writer(f)
     for col in cols:
         writer.writerow(col)
