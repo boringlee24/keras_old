@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('job_queue_50.json', 'r') as fp:
+with open('job_queue.json', 'r') as fp:
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -126,8 +126,8 @@ for item in queue:
 index = 0
 all_jobs_started = False
 
-K80_cap = 8
-V100_cap = 4
+K80_cap = 16
+V100_cap = 8
 K80_used = 0
 V100_used = 0
 
@@ -142,8 +142,8 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2176']
-V100_node = ['d1008']
+K80_node = ['c2183', 'c2182']
+V100_node = ['d1008', 'd1015']
 host_node = 'c0147'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
@@ -529,7 +529,6 @@ while True:
                         real_node, real_gpu = V100_LUT(gpu)
                         start_job(real_node, real_gpu, job_new)
                         birthplace[job_new] = real_node
-                        measure_job(real_node, real_gpu, job_new)
                         V100_job[gpu] = job_new
                         job_start[job_new] = time.time()
                         queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])                    
@@ -549,7 +548,6 @@ while True:
                         real_node, real_gpu = K80_LUT(gpu)
                         start_job(real_node, real_gpu, job_new)
                         birthplace[job_new] = real_node
-                        measure_job(real_node, real_gpu, job_new)
                         K80_job[gpu] = job_new
                         job_start[job_new] = time.time()
                         queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])                    
@@ -735,7 +733,6 @@ ovhd_total_name = testcase + '_ovhd_total.json'
 k80_1st_name = testcase + '_k80_1st.json'
 v100_1st_name = testcase + '_v100_1st.json'
 speedup_name = 'speedup.json'
-predict_name = 'predict.json'
 demote_list_name = 'demote_list.json'
 completion_name = 'completion.json'
 queue_delay_name = testcase + '_queue_delay.json'
@@ -773,8 +770,6 @@ with open(v100_1st_name, 'w') as fp3:
     json.dump(v100_1st, fp3, sort_keys=True, indent=4)
 with open(speedup_name, 'w') as fp1:
    json.dump(speedup_dict, fp1, sort_keys=True, indent=4)
-with open(predict_name, 'w') as fp1:
-   json.dump(predict_dict, fp1, sort_keys=True, indent=4)
 with open(demote_list_name, 'w') as fp1:
    json.dump(demote_list, fp1, sort_keys=True, indent=4)
 with open(completion_name, 'w') as fp1:

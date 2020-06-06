@@ -8,7 +8,7 @@ import csv
 import operator
 import pdb
 
-with open('../feedback_fair/logs/feedback_fair_num_mig.json', 'r') as fp:
+with open('../feedback_fair/archive_start_on_highend/logs/feedback_fair_num_mig.json', 'r') as fp:
     feedback_only = json.load(fp)
 with open('../final4_3level_new/logs/final4_3level_num_mig.json', 'r') as fp:
     scheme_only = json.load(fp)

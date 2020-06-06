@@ -1,0 +1,782 @@
+starting up on c0147 port 10002
+connecting to d1008 port 10000
+sending b'start 7 gpu 0'
+connecting to d1008 port 10000
+sending b'start 37 gpu 1'
+connecting to c2195 port 10000
+sending b'start 31 gpu 0'
+V100 finished job: 7
+connecting to d1008 port 10000
+sending b'start 43 gpu 0'
+connecting to c2195 port 10000
+sending b'start 1 gpu 1'
+connecting to c2176 port 10000
+sending b'start 22 gpu 0'
+connecting to c2176 port 10000
+sending b'start 6 gpu 1'
+P100 finished job: 1
+connecting to c2195 port 10000
+sending b'start 12 gpu 1'
+connecting to c2176 port 10000
+sending b'start 44 gpu 2'
+job37 has reached step1 complete on V100
+job37 has been qualified for demotion
+job31 has reached step1 complete on P100
+job31 has been qualified for demotion
+connecting to c2176 port 10000
+sending b'start 50 gpu 3'
+job37qualified for demote for profiling
+job31qualified for demote for profiling
+job12 has reached step1 complete on P100
+job12 has been qualified for demotion
+connecting to c2176 port 10000
+sending b'start 9 gpu 4'
+job12qualified for demote for profiling
+connecting to c2176 port 10000
+sending b'start 4 gpu 5'
+job6 has reached step1 complete on K80
+job6 has been qualified for promotion!
+connecting to c2176 port 10000
+sending b'start 38 gpu 6'
+connecting to c2176 port 10000
+sending b'start 29 gpu 7'
+V100 promoted jobs:  ['6']
+V100 demoted jobs:  ['37']
+connecting to c2176 port 10000
+sending b'save 6 pid 160072'
+connecting to d1008 port 10000
+sending b'save 37 pid 347891'
+6 checkpointed successfully
+37 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 6 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 37 gpu 1'
+K80 finished job: 9
+P100 finished job: 12
+V100 finished job: 6
+job43 has reached step1 complete on V100
+job43 has been qualified for demotion
+job37 has reached step2 complete on K80
+connecting to d1008 port 10000
+sending b'start 39 gpu 1'
+connecting to c2195 port 10000
+sending b'start 3 gpu 1'
+job43qualified for demote for profiling
+connecting to c2176 port 10000
+sending b'start 18 gpu 4'
+P100 promoted jobs:  ['37']
+P100 demoted jobs:  ['31']
+connecting to c2176 port 10000
+sending b'save 37 pid 161347'
+connecting to c2195 port 10000
+sending b'save 31 pid 108338'
+31 checkpointed successfully
+37 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 37 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 31 gpu 1'
+K80 finished job: 4
+P100 finished job: 3
+job31 has reached step2 complete on K80
+connecting to c2195 port 10000
+sending b'start 41 gpu 1'
+connecting to c2176 port 10000
+sending b'start 34 gpu 5'
+V100 promoted jobs:  ['31']
+V100 demoted jobs:  ['43']
+connecting to c2176 port 10000
+sending b'save 31 pid 161842'
+connecting to d1008 port 10000
+sending b'save 43 pid 348070'
+31 checkpointed successfully
+43 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 31 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 43 gpu 1'
+job22 has reached step1 complete on K80
+job38 has reached step1 complete on K80
+job22 has been qualified for promotion!
+job38 has been qualified for promotion!
+job43 has reached step2 complete on K80
+job39 has reached step1 complete on V100
+job39 has been qualified for demotion
+job39qualified for demote for profiling
+V100 promoted jobs:  ['38']
+V100 demoted jobs:  ['39']
+connecting to c2176 port 10000
+sending b'save 38 pid 161059'
+connecting to d1008 port 10000
+sending b'save 39 pid 348825'
+38 checkpointed successfully
+39 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 38 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 39 gpu 6'
+job31 has reached step1 complete on V100
+job39 has reached step2 complete on K80
+job38 has reached step2 complete on V100
+job31qualified for demote for passing demote qualify time
+V100 promoted jobs:  ['22']
+V100 demoted jobs:  ['31']
+connecting to c2176 port 10000
+sending b'save 22 pid 159870'
+connecting to d1008 port 10000
+sending b'save 31 pid 349161'
+22 checkpointed successfully
+31 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 22 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 31 gpu 0'
+job38 has reached step1 complete on V100
+job18 has reached step1 complete on K80
+job18 has been qualified for promotion!
+job22 has reached step2 complete on V100
+job37 has reached step1 complete on P100
+job37qualified for demote for passing demote qualify time
+P100 promoted jobs:  ['39']
+P100 demoted jobs:  ['37']
+connecting to c2176 port 10000
+sending b'save 39 pid 162527'
+connecting to c2195 port 10000
+sending b'save 37 pid 109510'
+39 checkpointed successfully
+37 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 39 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 37 gpu 6'
+job22 has reached step1 complete on V100
+job44 has reached step1 complete on K80
+job44 has been qualified for promotion!
+job41 has reached step1 complete on P100
+job41 has been qualified for demotion
+job29 has reached step1 complete on K80
+job29 has been qualified for promotion!
+job41qualified for demote for profiling
+P100 promoted jobs:  ['44']
+P100 demoted jobs:  ['41']
+connecting to c2176 port 10000
+sending b'save 44 pid 160277'
+connecting to c2195 port 10000
+sending b'save 41 pid 109701'
+44 checkpointed successfully
+41 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 44 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 41 gpu 2'
+job41 has reached step2 complete on K80
+job44 has reached step2 complete on P100
+job34 has reached step1 complete on K80
+job34 has been qualified for promotion!
+job50 has reached step1 complete on K80
+job50 has been qualified for promotion!
+job31 has reached step1 complete on K80
+V100 finished job: 22
+job39 has reached step1 complete on P100
+connecting to d1008 port 10000
+sending b'start 45 gpu 0'
+job39qualified for demote for passing demote qualify time
+P100 promoted jobs:  ['29']
+P100 demoted jobs:  ['39']
+connecting to c2176 port 10000
+sending b'save 29 pid 161123'
+connecting to c2195 port 10000
+sending b'save 39 pid 110294'
+29 checkpointed successfully
+39 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 29 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 39 gpu 7'
+job43 has reached step1 complete on K80
+job29 has reached step2 complete on P100
+K80 finished job: 18
+connecting to c2176 port 10000
+sending b'start 27 gpu 4'
+job45 has reached step1 complete on V100
+job45 has been qualified for demotion
+job27 has reached step1 complete on K80
+job27 has been qualified for promotion!
+job45qualified for demote for profiling
+V100 promoted jobs:  ['27']
+V100 demoted jobs:  ['45']
+connecting to c2176 port 10000
+sending b'save 27 pid 180952'
+connecting to d1008 port 10000
+sending b'save 45 pid 363224'
+27 checkpointed successfully
+45 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 27 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 45 gpu 4'
+job45 has reached step2 complete on K80
+job27 has reached step2 complete on V100
+job37 has reached step1 complete on K80
+job27 has reached step1 complete on V100
+job29 has reached step1 complete on P100
+job39 has reached step1 complete on K80
+job44 has reached step1 complete on P100
+job45 has reached step1 complete on K80
+V100 finished job: 38
+connecting to d1008 port 10000
+sending b'start 5 gpu 1'
+job41 has reached step1 complete on K80
+V100 finished job: 5
+connecting to d1008 port 10000
+sending b'start 21 gpu 1'
+job21 has reached step1 complete on V100
+job21 has been qualified for demotion
+job21qualified for demote for profiling
+V100 promoted jobs:  ['41']
+V100 demoted jobs:  ['21']
+connecting to c2176 port 10000
+sending b'save 41 pid 172084'
+connecting to d1008 port 10000
+sending b'save 21 pid 368696'
+41 checkpointed successfully
+21 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 41 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 21 gpu 2'
+job21 has reached step2 complete on K80
+V100 finished job: 27
+connecting to d1008 port 10000
+sending b'start 47 gpu 0'
+job41 has reached step1 complete on V100
+job21 has reached step1 complete on K80
+job41qualified for demote for passing demote qualify time
+P100 finished job: 29
+connecting to c2195 port 10000
+sending b'start 11 gpu 0'
+job11 has reached step1 complete on P100
+job11 has been qualified for demotion
+job11qualified for demote for profiling
+P100 promoted jobs:  ['45']
+P100 demoted jobs:  ['11']
+connecting to c2176 port 10000
+sending b'save 45 pid 181304'
+connecting to c2195 port 10000
+sending b'save 11 pid 129847'
+45 checkpointed successfully
+11 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 45 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 11 gpu 4'
+job11 has reached step2 complete on K80
+K80 finished job: 11
+connecting to c2176 port 10000
+sending b'start 30 gpu 4'
+job47 has reached step1 complete on V100
+job47 has been qualified for demotion
+job45 has reached step1 complete on P100
+job47qualified for demote for profiling
+job45qualified for demote for passing demote qualify time
+V100 promoted jobs:  ['34']
+P100 promoted jobs:  ['21']
+V100 demoted jobs:  ['47']
+P100 demoted jobs:  ['45']
+connecting to c2176 port 10000
+sending b'save 21 pid 182192'
+connecting to c2176 port 10000
+sending b'save 34 pid 162052'
+connecting to c2195 port 10000
+sending b'save 45 pid 130185'
+connecting to d1008 port 10000
+sending b'save 47 pid 369311'
+21 checkpointed successfully
+34 checkpointed successfully
+45 checkpointed successfully
+47 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 34 gpu 0'
+connecting to c2195 port 10000
+sending b'resume 21 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 45 gpu 2'
+connecting to c2176 port 10000
+sending b'resume 47 gpu 5'
+job47 has reached step2 complete on K80
+job34 has reached step2 complete on V100
+job30 has reached step1 complete on K80
+job30 has been qualified for promotion!
+job21 has reached step1 complete on P100
+job21qualified for demote for passing demote qualify time
+P100 promoted jobs:  ['47']
+P100 demoted jobs:  ['21']
+connecting to c2176 port 10000
+sending b'save 47 pid 184135'
+connecting to c2195 port 10000
+sending b'save 21 pid 130853'
+21 checkpointed successfully
+47 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 47 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 21 gpu 5'
+job34 has reached step1 complete on V100
+K80 finished job: 31
+connecting to c2176 port 10000
+sending b'start 2 gpu 0'
+K80 finished job: 2
+V100 finished job: 34
+connecting to d1008 port 10000
+sending b'start 40 gpu 0'
+connecting to c2176 port 10000
+sending b'start 25 gpu 0'
+job40 has reached step1 complete on V100
+job40 has been qualified for demotion
+job40qualified for demote for profiling
+V100 promoted jobs:  ['30']
+V100 demoted jobs:  ['40']
+connecting to c2176 port 10000
+sending b'save 30 pid 183604'
+connecting to d1008 port 10000
+sending b'save 40 pid 371484'
+30 checkpointed successfully
+40 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 30 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 40 gpu 4'
+K80 finished job: 21
+job25 has reached step1 complete on K80
+job25 has been qualified for promotion!
+job40 has reached step2 complete on K80
+job30 has reached step2 complete on V100
+connecting to c2176 port 10000
+sending b'start 48 gpu 5'
+K80 finished job: 39
+job30 has reached step1 complete on V100
+connecting to c2176 port 10000
+sending b'start 13 gpu 7'
+job40 has reached step1 complete on K80
+V100 finished job: 41
+connecting to d1008 port 10000
+sending b'start 49 gpu 1'
+job13 has reached step1 complete on K80
+job13 has been qualified for promotion!
+V100 finished job: 30
+connecting to d1008 port 10000
+sending b'start 16 gpu 0'
+K80 finished job: 13
+job16 has reached step1 complete on V100
+job16 has been qualified for demotion
+connecting to c2176 port 10000
+sending b'start 23 gpu 7'
+job16qualified for demote for profiling
+V100 promoted jobs:  ['25']
+V100 demoted jobs:  ['16']
+connecting to c2176 port 10000
+sending b'save 25 pid 185244'
+connecting to d1008 port 10000
+sending b'save 16 pid 372720'
+25 checkpointed successfully
+16 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 25 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 16 gpu 0'
+job16 has reached step2 complete on K80
+job25 has reached step2 complete on V100
+job25 has reached step1 complete on V100
+V100 finished job: 25
+connecting to d1008 port 10000
+sending b'start 10 gpu 0'
+job23 has reached step1 complete on K80
+job23 has been qualified for promotion!
+V100 finished job: 10
+connecting to d1008 port 10000
+sending b'start 33 gpu 0'
+K80 finished job: 37
+connecting to c2176 port 10000
+sending b'start 26 gpu 6'
+job49 has reached step1 complete on V100
+job49 has been qualified for demotion
+job49qualified for demote for profiling
+V100 promoted jobs:  ['50']
+V100 demoted jobs:  ['49']
+connecting to c2176 port 10000
+sending b'save 50 pid 160480'
+connecting to d1008 port 10000
+sending b'save 49 pid 372391'
+50 checkpointed successfully
+49 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 50 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 49 gpu 3'
+job47 has reached step1 complete on P100
+job16 has reached step1 complete on K80
+job49 has reached step2 complete on K80
+job50 has reached step2 complete on V100
+job47qualified for demote for passing demote qualify time
+P100 promoted jobs:  ['40']
+P100 demoted jobs:  ['47']
+connecting to c2176 port 10000
+sending b'save 40 pid 185498'
+connecting to c2195 port 10000
+sending b'save 47 pid 131306'
+40 checkpointed successfully
+47 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 40 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 47 gpu 4'
+K80 finished job: 16
+job33 has reached step1 complete on V100
+job33 has been qualified for demotion
+job26 has reached step1 complete on K80
+job26 has been qualified for promotion!
+connecting to c2176 port 10000
+sending b'start 19 gpu 0'
+job33qualified for demote for profiling
+V100 promoted jobs:  ['26']
+V100 demoted jobs:  ['33']
+connecting to c2176 port 10000
+sending b'save 26 pid 187426'
+connecting to d1008 port 10000
+sending b'save 33 pid 373619'
+26 checkpointed successfully
+33 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 26 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 33 gpu 6'
+job40 has reached step1 complete on P100
+job33 has reached step2 complete on K80
+job26 has reached step2 complete on V100
+job40qualified for demote for passing demote qualify time
+P100 promoted jobs:  ['49']
+P100 demoted jobs:  ['40']
+connecting to c2176 port 10000
+sending b'save 49 pid 187686'
+connecting to c2195 port 10000
+sending b'save 40 pid 133315'
+40 checkpointed successfully
+49 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 49 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 40 gpu 3'
+job26 has reached step1 complete on V100
+P100 finished job: 44
+connecting to c2195 port 10000
+sending b'start 28 gpu 1'
+job19 has reached step1 complete on K80
+job19 has been qualified for promotion!
+job50 has reached step1 complete on V100
+job28 has reached step1 complete on P100
+job28 has been qualified for demotion
+job28qualified for demote for profiling
+P100 promoted jobs:  ['19']
+P100 demoted jobs:  ['28']
+connecting to c2176 port 10000
+sending b'save 19 pid 188150'
+connecting to c2195 port 10000
+sending b'save 28 pid 133935'
+19 checkpointed successfully
+28 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 19 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 28 gpu 0'
+job33 has reached step1 complete on K80
+job28 has reached step2 complete on K80
+job19 has reached step2 complete on P100
+job19 has reached step1 complete on P100
+job48 has reached step1 complete on K80
+job48 has been qualified for promotion!
+V100 finished job: 26
+connecting to d1008 port 10000
+sending b'start 17 gpu 0'
+job17 has reached step1 complete on V100
+job17 has been qualified for demotion
+job17qualified for demote for profiling
+V100 promoted jobs:  ['28']
+V100 demoted jobs:  ['17']
+connecting to c2176 port 10000
+sending b'save 28 pid 189174'
+connecting to d1008 port 10000
+sending b'save 17 pid 375316'
+28 checkpointed successfully
+17 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 28 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 17 gpu 0'
+job17 has reached step2 complete on K80
+P100 finished job: 19
+connecting to c2195 port 10000
+sending b'start 15 gpu 1'
+job49 has reached step1 complete on P100
+job17 has reached step1 complete on K80
+job49qualified for demote for passing demote qualify time
+P100 promoted jobs:  ['43']
+P100 demoted jobs:  ['49']
+connecting to c2176 port 10000
+sending b'save 43 pid 162273'
+connecting to c2195 port 10000
+sending b'save 49 pid 133700'
+43 checkpointed successfully
+49 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 43 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 49 gpu 1'
+job28 has reached step1 complete on V100
+job15 has reached step1 complete on P100
+job15 has been qualified for demotion
+job15qualified for demote for profiling
+P100 promoted jobs:  ['23']
+P100 demoted jobs:  ['15']
+connecting to c2176 port 10000
+sending b'save 23 pid 186727'
+connecting to c2195 port 10000
+sending b'save 15 pid 135160'
+23 checkpointed successfully
+15 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 23 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 15 gpu 7'
+job15 has reached step2 complete on K80
+job23 has reached step2 complete on P100
+job23 has reached step1 complete on P100
+job15 has reached step1 complete on K80
+K80 finished job: 15
+connecting to c2176 port 10000
+sending b'start 24 gpu 7'
+job47 has reached step1 complete on K80
+P100 finished job: 43
+P100 finished job: 23
+connecting to c2195 port 10000
+sending b'start 8 gpu 0'
+connecting to c2195 port 10000
+sending b'start 36 gpu 1'
+V100 finished job: 28
+connecting to d1008 port 10000
+sending b'start 32 gpu 0'
+P100 finished job: 8
+connecting to c2195 port 10000
+sending b'start 35 gpu 0'
+job24 has reached step1 complete on K80
+job24 has been qualified for promotion!
+K80 finished job: 45
+connecting to c2176 port 10000
+sending b'start 46 gpu 2'
+job35 has reached step1 complete on P100
+job35 has been qualified for demotion
+job35qualified for demote for profiling
+P100 promoted jobs:  ['24']
+P100 demoted jobs:  ['35']
+connecting to c2176 port 10000
+sending b'save 24 pid 190644'
+connecting to c2195 port 10000
+sending b'save 35 pid 136737'
+35 checkpointed successfully
+24 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 24 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 35 gpu 7'
+job36 has reached step1 complete on P100
+job36 has been qualified for demotion
+job35 has reached step2 complete on K80
+job24 has reached step2 complete on P100
+job36qualified for demote for profiling
+P100 promoted jobs:  ['33']
+P100 demoted jobs:  ['36']
+connecting to c2176 port 10000
+sending b'save 33 pid 188322'
+connecting to c2195 port 10000
+sending b'save 36 pid 136353'
+36 checkpointed successfully
+33 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 33 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 36 gpu 6'
+K80 finished job: 17
+job32 has reached step1 complete on V100
+job32 has been qualified for demotion
+job49 has reached step1 complete on K80
+job36 has reached step2 complete on K80
+connecting to c2176 port 10000
+sending b'start 14 gpu 0'
+job32qualified for demote for profiling
+V100 promoted jobs:  ['35']
+V100 demoted jobs:  ['32']
+connecting to c2176 port 10000
+sending b'save 35 pid 191605'
+connecting to d1008 port 10000
+sending b'save 32 pid 376645'
+35 checkpointed successfully
+32 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 35 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 32 gpu 7'
+job32 has reached step2 complete on K80
+job35 has reached step1 complete on V100
+P100 finished job: 33
+job24 has reached step1 complete on P100
+job14 has reached step1 complete on K80
+job14 has been qualified for promotion!
+connecting to c2195 port 10000
+sending b'start 42 gpu 1'
+job35qualified for demote for passing demote qualify time
+V100 promoted jobs:  ['36']
+V100 demoted jobs:  ['35']
+connecting to c2176 port 10000
+sending b'save 36 pid 191812'
+connecting to d1008 port 10000
+sending b'save 35 pid 377207'
+36 checkpointed successfully
+35 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 36 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 35 gpu 6'
+K80 finished job: 14
+connecting to c2176 port 10000
+sending b'start 20 gpu 0'
+job36 has reached step1 complete on V100
+job35 has reached step1 complete on K80
+P100 finished job: 24
+job20 has reached step1 complete on K80
+job20 has been qualified for promotion!
+no new job arrivals
+P100 promoted jobs:  ['20']
+connecting to c2176 port 10000
+sending b'save 20 pid 192989'
+20 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 20 gpu 0'
+job20 has reached step2 complete on P100
+job32 has reached step1 complete on K80
+job20 has reached step1 complete on P100
+job36qualified for demote for passing demote qualify time
+no new job arrivals
+V100 promoted jobs:  ['48']
+V100 demoted jobs:  ['36']
+connecting to c2176 port 10000
+sending b'save 48 pid 185677'
+connecting to d1008 port 10000
+sending b'save 36 pid 377794'
+48 checkpointed successfully
+36 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 48 gpu 0'
+connecting to c2176 port 10000
+sending b'resume 36 gpu 0'
+job48 has reached step2 complete on V100
+job42 has reached step1 complete on P100
+job42 has been qualified for demotion
+job42qualified for demote for profiling
+no new job arrivals
+P100 promoted jobs:  ['32']
+P100 demoted jobs:  ['42']
+connecting to c2176 port 10000
+sending b'save 32 pid 192159'
+connecting to c2195 port 10000
+sending b'save 42 pid 137887'
+32 checkpointed successfully
+42 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 32 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 42 gpu 5'
+P100 finished job: 20
+job42 has reached step2 complete on K80
+no new job arrivals
+P100 promoted jobs:  ['40']
+connecting to c2176 port 10000
+sending b'save 40 pid 188543'
+40 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 40 gpu 0'
+job40qualified for demote for passing demote qualify time
+job36 has reached step1 complete on K80
+job48 has reached step1 complete on V100
+job32 has reached step1 complete on P100
+job32qualified for demote for passing demote qualify time
+job46 has reached step1 complete on K80
+job46 has been qualified for promotion!
+no new job arrivals
+P100 promoted jobs:  ['46']
+P100 demoted jobs:  ['32']
+connecting to c2176 port 10000
+sending b'save 46 pid 191394'
+connecting to c2195 port 10000
+sending b'save 32 pid 138878'
+32 checkpointed successfully
+46 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 46 gpu 1'
+connecting to c2176 port 10000
+sending b'resume 32 gpu 2'
+job46 has reached step2 complete on P100
+job42 has reached step1 complete on K80
+P100 finished job: 40
+no new job arrivals
+P100 promoted jobs:  ['32']
+connecting to c2176 port 10000
+sending b'save 32 pid 194675'
+32 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 32 gpu 0'
+job32qualified for demote for passing demote qualify time
+K80 finished job: 35
+job46 has reached step1 complete on P100
+P100 finished job: 32
+no new job arrivals
+P100 promoted jobs:  ['47']
+connecting to c2176 port 10000
+sending b'save 47 pid 187890'
+47 checkpointed successfully
+connecting to c2195 port 10000
+sending b'resume 47 gpu 0'
+job47qualified for demote for passing demote qualify time
+K80 finished job: 36
+K80 finished job: 42
+V100 finished job: 50
+no new job arrivals
+V100 promoted jobs:  ['49']
+connecting to c2176 port 10000
+sending b'save 49 pid 190087'
+49 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 49 gpu 1'
+V100 finished job: 48
+no new job arrivals
+jobs promoted from P100 to V100
+V100 promoted jobs:  ['46']
+connecting to c2195 port 10000
+sending b'save 46 pid 139764'
+46 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 46 gpu 0'
+job46 has reached step1 complete on V100
+V100 finished job: 49
+no new job arrivals
+jobs promoted from P100 to V100
+V100 promoted jobs:  ['47']
+connecting to c2195 port 10000
+sending b'save 47 pid 142135'
+47 checkpointed successfully
+connecting to d1008 port 10000
+sending b'resume 47 gpu 1'
+job46qualified for demote for passing demote qualify time
+V100 finished job: 47
+V100 finished job: 46
+all jobs are finished!
+finished all runs

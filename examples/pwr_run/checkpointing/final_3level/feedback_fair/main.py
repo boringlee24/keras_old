@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('job_queue_50.json', 'r') as fp:#TODO
+with open('job_queue.json', 'r') as fp:
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -136,9 +136,9 @@ for item in queue:
 index = 0
 all_jobs_started = False
 
-K80_cap = 8
-P100_cap = 2
-V100_cap = 2
+K80_cap = 16
+P100_cap = 4
+V100_cap = 4
 K80_used = 0
 P100_used = 0
 V100_used = 0
@@ -159,7 +159,7 @@ step1_job_K80 = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2176']
+K80_node = ['c2183', 'c2182']
 P100_node = ['c2195']
 V100_node = ['d1008']
 host_node = 'c0147'
