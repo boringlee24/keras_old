@@ -33,6 +33,7 @@ for tc in dirs: # try number
             pwr = data[data.columns[2]].tolist()
             util = data[data.columns[5]].tolist()
             valid = []
+            # measurement is only valid when util > 0
             for i in range(len(pwr)):
                 if util[i] > 0:
                     valid.append(pwr[i])
