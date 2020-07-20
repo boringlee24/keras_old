@@ -29,6 +29,7 @@ import signal
 import glob
 import json
 import send_signal
+from scipy.stats import variation
 
 parser = argparse.ArgumentParser(description='Tensorflow Cifar10 Training')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='specific testcase name')
@@ -142,7 +143,9 @@ else:
 
 #pdb.set_trace()
 
-current_epoch = 0
+first_epoch_start = 0
+batch_time = []
+batch_begin = 0
 
 ################### connects interrupt signal to the process #####################
 
@@ -182,6 +185,19 @@ tensorboard_callback = TensorBoard(log_dir=logdir)#, update_freq='batch')
 first_epoch_start = 0
 
 class PrintEpoch(keras.callbacks.Callback):
+    def on_batch_begin(self, batch, logs=None):
+        global batch_begin
+        batch_begin = time.time()
+    def on_batch_end(self, batch, logs=None):
+        global batch_time, batch_begin
+        batch_time.append(float(time.time() - batch_begin))
+        # when collected 100 batch times, calculate to see if it's stable
+        if len(batch_time) == 100:
+            if variation(batch_time) < 0.1:
+                stable_batch = round(np.mean(batch_time), 3)                
+                message = job_name + ' batch_time ' + str(stable_batch)
+                send_signal.send(args.node, 10002, message)
+            batch_time = []
     def on_epoch_begin(self, epoch, logs=None):
         global current_epoch, first_epoch_start
         #remaining_epochs = epochs - epoch
