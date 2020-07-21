@@ -215,7 +215,8 @@ class PrintEpoch(keras.callbacks.Callback):
             # send signal to indicate checkpoint is qualified
             message = job_name + ' ckpt_qual'
             send_signal.send(args.node, 10002, message)
-
+        message = job_name + ' epoch_begin ' + str(current_epoch)
+        send_signal.send(args.node, 10002, message)
 
     def on_epoch_end(self, epoch, logs=None):
         if epoch == starting_epoch:

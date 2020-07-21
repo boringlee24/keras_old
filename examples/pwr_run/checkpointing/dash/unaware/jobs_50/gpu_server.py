@@ -55,7 +55,7 @@ while True:
                     out_file = log_dir + jobid + '.out'
                     err_file = log_dir + jobid + '.err'
                     gpuid = data_str.split(' ')[3]
-                    cmd = 'python jobs/job' + jobid + '.py --tc ' + testcase + ' --gpu_num ' + gpuid + ' --node ' + args.host
+                    cmd = 'python job' + jobid + '.py --tc ' + testcase + ' --gpu_num ' + gpuid + ' --node ' + args.host
                     os.makedirs(os.path.dirname(out_file), exist_ok=True)
                     os.makedirs(os.path.dirname(err_file), exist_ok=True)
                     with open(out_file, 'w+') as out, open(err_file, 'w+') as err:
@@ -66,7 +66,7 @@ while True:
                     out_file = log_dir + jobid + '.out'
                     err_file = log_dir + jobid + '.err'
                     gpuid = data_str.split(' ')[3]
-                    cmd = 'python jobs/job' + jobid + '.py --tc ' + testcase + ' --gpu_num ' + gpuid + ' --node ' + args.host + ' --resume'
+                    cmd = 'python job' + jobid + '.py --tc ' + testcase + ' --gpu_num ' + gpuid + ' --node ' + args.host + ' --resume'
                     os.makedirs(os.path.dirname(out_file), exist_ok=True)
                     os.makedirs(os.path.dirname(err_file), exist_ok=True)
                     with open(out_file, 'w+') as out, open(err_file, 'w+') as err:

@@ -32,6 +32,8 @@ queue_delay = {}
 for item in queue:
     queue_delay[str(item)] = 0
 
+multigpu_list = ['1', '2', '3']
+
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
 for item in queue:
@@ -79,10 +81,12 @@ with open('speedup.json', 'r') as fp:
 
 index = 0
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 8
+V100_cap = 4
 K80_used = 0
 V100_used = 0
+K80_per_node = 8
+V100_per_node = 4
 
 K80_job = {}
 for i in range(K80_cap):
@@ -93,13 +97,13 @@ for i in range(V100_cap):
 qualified_job = []
 pc_job = []
 
-K80_node = ['c2180', 'c2179']
-V100_node = ['d1009', 'd1002']
-host_node = 'c0177'
+K80_node = ['c2182']
+V100_node = ['d1018']
+host_node = 'c0176'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
-INTERVAL = 30 # make decision every 30s
+INTERVAL = 30 # make decision every 30s 
 
 def K80_LUT(gpu):
     quotient = int(gpu) // 8
@@ -117,14 +121,6 @@ def V100_LUT(gpu):
 def send_signal(node, cmd):
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if node == K80_node[0]:
-        port = 10000
-    elif node == K80_node[1]:
-        port = 10001
-    elif node == V100_node[0]:
-        port = 10002
-    elif node == V100_node[1]:
-        port = 10003
     port = 10000
     # Connect the socket to the port where the server is listening
     server_address = (node, int(port))
@@ -176,7 +172,23 @@ def resume_job(node, gpu, job): # resume_job('c2176', '3', '50')
 # start job
 def start_job(node, gpu, job):
     cmd = 'start ' + job + ' gpu ' + gpu
-    send_signal(node, cmd)   
+    send_signal(node, cmd)  
+
+# function to detect if there are two free GPUs in a node
+# returns an empty list if there is none, otherwise returns list with gpu id in V100/K80_jobs
+def detect_2_gpus(gpu_dict, gpu_per_node):
+    job_list = list(gpu_dict.values())
+    num_nodes = int(len(job_list) / gpu_per_node)
+    for i in range(num_nodes):
+        start = i * gpu_per_node
+        end = i + gpu_per_node
+        sliced_list = job_list[start:end]
+        occurence = sliced_list.count('idle')
+        if occurence >= 2:
+            # only take the first two elements
+            indexs = [j for j, e in enumerate(sliced_list) if e == 'idle'][:2]
+            return [str(j + start) for j in indexs]
+    return []
 
 ############### first clear finish status of all jobs ####################
 
@@ -286,7 +298,6 @@ def thread_function():
 
 x = threading.Thread(target=thread_function, daemon=True)
 x.start()
-pdb.set_trace()
 ###############################################################################
 
 ######################################################################
@@ -321,17 +332,37 @@ while True:
             time_passed = int(time.time() - queue_timer)
             if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
                 job_new = str(queue[index])
-                for gpu, job in V100_job.items():
-                    if job == 'idle': # schedule new job here if idle
-                        real_node, real_gpu = V100_LUT(gpu)
-                        start_job(real_node, real_gpu, job_new)
-                        V100_job[gpu] = job_new
-                        job_start[job_new] = time.time()
-                        queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
-                        V100_start_time[job_new] = time.time()
-                        index += 1
-                        V100_used += 1
-                        break
+                if job_new in multigpu_list:
+                    # find 2 gpus in the same node to schedule it
+                    idle_gpus = detect_2_gpus(V100_job, V100_per_node)
+                    if len(idle_gpus) > 0:
+                        node_string = ''
+                        for gpu in idle_gpus:
+                            real_node, real_gpu = V100_LUT(gpu)
+                            if gpu == idle_gpus[1]:
+                                gpu_str += real_gpu
+                                node_string = real_node
+                                job_start[job_new] = time.time()
+                                queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                                V100_start_time[job_new] = time.time()
+                                index += 1
+                            else:
+                                gpu_str = real_gpu + ','
+                            V100_job[gpu] = job_new
+                            V100_used += 1
+                        start_job(node_string, gpu_str, job_new)
+                else:
+                    for gpu, job in V100_job.items():
+                        if job == 'idle': # schedule new job here if idle
+                            real_node, real_gpu = V100_LUT(gpu)
+                            start_job(real_node, real_gpu, job_new)
+                            V100_job[gpu] = job_new
+                            job_start[job_new] = time.time()
+                            queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                            V100_start_time[job_new] = time.time()
+                            index += 1
+                            V100_used += 1
+                            break
     # first fill in vacant K80s
     if K80_used < K80_cap:
         K80_free = K80_cap - K80_used
@@ -339,17 +370,37 @@ while True:
             time_passed = int(time.time() - queue_timer)
             if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
                 job_new = str(queue[index])
-                for gpu, job in K80_job.items():
-                    if job == 'idle': # schedule new job here if idle
-                        real_node, real_gpu = K80_LUT(gpu)
-                        start_job(real_node, real_gpu, job_new)
-                        K80_job[gpu] = job_new
-                        job_start[job_new] = time.time() 
-                        queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
-                        K80_start_time[job_new] = time.time()
-                        index += 1
-                        K80_used += 1
-                        break
+                if job_new in multigpu_list:
+                    # find 2 gpus in the same node to schedule it
+                    idle_gpus = detect_2_gpus(K80_job, K80_per_node)
+                    if len(idle_gpus) > 0:
+                        node_string = ''
+                        for gpu in idle_gpus:
+                            real_node, real_gpu = K80_LUT(gpu)
+                            if gpu == idle_gpus[1]:
+                                gpu_str += real_gpu
+                                node_string = real_node
+                                job_start[job_new] = time.time()
+                                queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                                K80_start_time[job_new] = time.time()
+                                index += 1
+                            else:
+                                gpu_str = real_gpu + ','
+                            K80_job[gpu] = job_new
+                            K80_used += 1
+                        start_job(node_string, gpu_str, job_new)
+                else:
+                    for gpu, job in K80_job.items():
+                        if job == 'idle': # schedule new job here if idle
+                            real_node, real_gpu = K80_LUT(gpu)
+                            start_job(real_node, real_gpu, job_new)
+                            K80_job[gpu] = job_new
+                            job_start[job_new] = time.time()
+                            queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                            K80_start_time[job_new] = time.time()
+                            index += 1
+                            K80_used += 1
+                            break
 
     ############## monitor GPU usage ############
 
