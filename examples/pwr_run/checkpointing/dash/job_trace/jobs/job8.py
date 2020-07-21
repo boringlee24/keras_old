@@ -49,7 +49,7 @@ args_lr = 0.002
 epoch_begin_time = 0
 
 job_name = sys.argv[0].split('.')[0]
-save_files = '/scratch/li.baol/dl_checkpoints/unaware/' + job_name + '*'
+save_files = '/scratch/li.baol/dl_checkpoints/' + args.tc + '/' + job_name + '*'
 
 total_epochs = 10
 starting_epoch = 0
@@ -143,7 +143,9 @@ else:
 
 #pdb.set_trace()
 
-current_epoch = 0
+first_epoch_start = 0
+batch_time = []
+batch_begin = 0
 
 ################### connects interrupt signal to the process #####################
 
@@ -163,8 +165,8 @@ def terminateProcess(signalNumber, frame):
     # delete whatever checkpoint that already exists
     for f in glob.glob(save_files):
         os.remove(f)
-    pathlib.Path('/scratch/li.baol/dl_checkpoints/unaware/').mkdir(parents=True, exist_ok=True)
-    model.save('/scratch/li.baol/dl_checkpoints/unaware/' + job_name + '_' + str(current_epoch) + '.h5')
+    pathlib.Path('/scratch/li.baol/dl_checkpoints/'+args.tc+'/').mkdir(parents=True, exist_ok=True)
+    model.save('/scratch/li.baol/dl_checkpoints/'+args.tc+'/' + job_name + '_' + str(current_epoch) + '.h5')
     print ('(SIGTERM) terminating the process')
 
     message = job_name + ' checkpoint'
@@ -181,8 +183,6 @@ logdir = '/scratch/li.baol/tsrbrd_log/job_runs/' + model_type + '/' + job_name
 tensorboard_callback = TensorBoard(log_dir=logdir)#, update_freq='batch')
 
 first_epoch_start = 0
-batch_time = []
-batch_begin = 0
 
 class PrintEpoch(keras.callbacks.Callback):
     def on_batch_begin(self, batch, logs=None):
