@@ -53,7 +53,7 @@ args_model = 'vgg16'
 epoch_begin_time = 0
 
 job_name = sys.argv[0].split('.')[0]
-save_files = '/scratch/li.baol/dl_checkpoints/' + args.tc + '/' + job_name + '*'
+save_files = '/scratch/li.baol/dl_checkpoints/' + args.tc + '/' + job_name + '_*'
 
 total_epochs = 151
 starting_epoch = 0

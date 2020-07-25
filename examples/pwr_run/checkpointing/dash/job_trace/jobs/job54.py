@@ -30,6 +30,7 @@ import signal
 import glob
 import json
 import send_signal
+import pathlib
 from scipy.stats import variation
 
 parser = argparse.ArgumentParser(description='Tensorflow Cifar10 Training')
@@ -51,7 +52,7 @@ args_model = 'vgg19'
 epoch_begin_time = 0
 
 job_name = sys.argv[0].split('.')[0]
-save_files = '/scratch/li.baol/dl_checkpoints/' + args.tc + '/' + job_name + '*'
+save_files = '/scratch/li.baol/dl_checkpoints/' + args.tc + '/' + job_name + '_*'
 
 total_epochs = 15
 starting_epoch = 0
@@ -64,7 +65,7 @@ send_signal.send(args.node, 10002, message)
 if args.resume:
     save_file = glob.glob(save_files)[0]
 #    epochs = int(save_file.split('/')[4].split('_')[1].split('.')[0])
-    starting_epoch = int(save_file.split('/')[4].split('.')[0].split('_')[-1])
+    starting_epoch = int(save_file.split('/')[5].split('.')[0].split('_')[-1])
 
 data_augmentation = True
 num_classes = 2

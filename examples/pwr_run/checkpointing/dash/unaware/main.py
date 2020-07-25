@@ -351,6 +351,7 @@ while True:
                             V100_job[gpu] = job_new
                             V100_used += 1
                         start_job(node_string, gpu_str, job_new)
+                        time.sleep(5) # don't communicate too often
                 else:
                     for gpu, job in V100_job.items():
                         if job == 'idle': # schedule new job here if idle
@@ -362,6 +363,7 @@ while True:
                             V100_start_time[job_new] = time.time()
                             index += 1
                             V100_used += 1
+                            time.sleep(5) # don't communicate too often
                             break
     # first fill in vacant K80s
     if K80_used < K80_cap:
@@ -389,6 +391,7 @@ while True:
                             K80_job[gpu] = job_new
                             K80_used += 1
                         start_job(node_string, gpu_str, job_new)
+                        time.sleep(5) # don't communicate too often
                 else:
                     for gpu, job in K80_job.items():
                         if job == 'idle': # schedule new job here if idle
@@ -400,6 +403,7 @@ while True:
                             K80_start_time[job_new] = time.time()
                             index += 1
                             K80_used += 1
+                            time.sleep(5) # don't communicate too often
                             break
 
     ############## monitor GPU usage ############
@@ -422,6 +426,9 @@ while True:
     if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
         print('all jobs are finished!')
         break
+
+    if int(time.time() - queue_timer) > 36000:
+        pdb.set_trace()
 
 
 # get average JCT

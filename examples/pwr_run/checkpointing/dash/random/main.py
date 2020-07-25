@@ -88,9 +88,6 @@ for item in queue:
 queue_time = {} # initialize this to 0 as well
 for item in queue:
     queue_time[str(item)] = 0
-K80_epoch_time = {}
-for item in queue:
-    K80_epoch_time[str(item)] = 0
 K80_start_time = {}
 for item in queue:
     K80_start_time[str(item)] = 0
@@ -127,7 +124,7 @@ pc_job = []
 
 K80_node = ['c2177']
 V100_node = ['d1018']
-host_node = 'c0159'
+host_node = 'c0154'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -340,7 +337,7 @@ def random_promotion(V100_avail, new_pool, promote_list):
                     V100_pool.remove(picked)
                     mapping[picked] = i[0]
                     picked_2 = random.choice(pool_1gpu)
-                    sorted_pool = append(picked_2)
+                    sorted_pool.append(picked_2)
                     pool_1gpu.remove(picked_2)
                     V100_pool.remove(picked_2)
                     mapping[picked_2] = i[1]
@@ -608,16 +605,20 @@ while True:
             print('promoted jobs: ', promoted)
         # stop all promoted jobs on K80
         checkpoint_finish_check = []
-        for gpu, job in K80_job.items():
-            if job in promoted:
-                if job not in new_pool: # don't do checkpointing for new jobs
-                    real_node, real_gpu = K80_LUT(gpu)
-                    save_job(real_node, job)
-                    if finish_dict['job'+job] != 1:
-                        K80_time[job] += int(time.time() - K80_start_time[job])
-                    checkpoint_finish_check.append(job)
-                K80_job[gpu] = 'idle'
-                K80_used -= 1
+        for job in promoted[:]:
+            # need to find its current gpu on K80
+            current_gpu = ''
+            for gpu, job_K in K80_job.items():
+                if job_K == job:
+                    current_gpu = gpu
+                    break
+            real_node, real_gpu = K80_LUT(current_gpu)
+            save_job(real_node, job)
+            if finish_dict['job'+job] != 1:
+                K80_time[job] += int(time.time() - K80_start_time[job])
+            checkpoint_finish_check.append(job)
+            K80_job[current_gpu] = 'idle'
+            K80_used -= 1
 
         # wait for all GPUs to be available
         if len(checkpoint_finish_check) > 0:
@@ -634,6 +635,8 @@ while True:
                         checkpoint_finish_check.remove(job)
                 if len(checkpoint_finish_check) == 0:
                     break
+        # give it some time to cleanup old checkpointed jobs
+        time.sleep(3)
 
         # 1. deal with all V100 jobs (started, promoted). The job-gpu mapping is already known 
         for job in started[:]: # new jobs
