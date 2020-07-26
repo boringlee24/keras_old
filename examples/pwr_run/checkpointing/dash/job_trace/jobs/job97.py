@@ -191,13 +191,16 @@ class PrintEpoch(keras.callbacks.Callback):
         # when collected 100 batch times, calculate to see if it's stable
         if len(batch_time) == 100:
             if stable_batch == 0:
-                if variation(batch_time) < 0.1:
-                    stable_batch = round(np.mean(batch_time), 3)           
-                    message = job_name + ' batch_time ' + str(stable_batch)
-                    send_signal.send(args.node, 10002, message)
+                stable_batch = round(np.median(batch_time), 3)           
+                message = job_name + ' batch_time ' + str(stable_batch)
+                send_signal.send(args.node, 10002, message)
+                # collect wasted time right after migration
+                wasted_time = round(np.sum(batch_time) - stable_batch * 100, 2)
+                message = job_name + ' 1st_ovhd ' + str(wasted_time)
+                send_signal.send(args.node, 10002, message)
             batch_time = []
             self.remaining_batches -= 100
-            message = job_name + ' remaining_batch ' + str(self.remaining_batches)
+            message = job_name + ' remain_batch ' + str(self.remaining_batches)
             send_signal.send(args.node, 10002, message)
     def on_epoch_begin(self, epoch, logs=None):
         global current_epoch, first_epoch_start
