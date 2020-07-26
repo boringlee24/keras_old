@@ -427,10 +427,6 @@ while True:
         print('all jobs are finished!')
         break
 
-    if int(time.time() - queue_timer) > 36000:
-        pdb.set_trace()
-
-
 # get average JCT
 average_JCT = np.average(list(JCT.values()))
 JCT['average'] = average_JCT

@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_100.json', 'r') as fp:
+with open('../job_trace/job_queue_50.json', 'r') as fp:
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -32,7 +32,7 @@ queue_delay = {}
 for item in queue:
     queue_delay[str(item)] = 0
 
-multigpu_list = ['1', '2', '3', '4', '5', '6', '7']
+multigpu_list = ['1', '2', '3'] #TODO
 
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
@@ -88,12 +88,41 @@ for item in queue:
 queue_time = {} # initialize this to 0 as well
 for item in queue:
     queue_time[str(item)] = 0
+#TODO: monitor batch time here
+V100_batch_time = {}
+for item in queue:
+    V100_batch_time[str(item)] = 0
+K80_batch_time = {}
+for item in queue:
+    K80_batch_time[str(item)] = 0
+
+#TODO: monitor 1st epoch overhead after migration here
+V100_1st_ovhd = {}
+for item in queue:
+    V100_1st_ovhd[str(item)] = 0
+K80_1st_ovhd = {}
+for item in queue:
+    K80_1st_ovhd[str(item)] = 0
+
 K80_start_time = {}
 for item in queue:
     K80_start_time[str(item)] = 0
 V100_start_time = {}
 for item in queue:
     V100_start_time[str(item)] = 0
+
+#TODO: may not be needed
+promote_start_time = {}
+for item in queue:
+    promote_start_time[str(item)] = 0
+demote_list = []
+
+#TODO: most important new change
+# this remaining time should be normalized to remaining time when running on K80
+job_remaining_batch = {}
+for item in queue:
+    job_remaining_batch[str(item)] = 0
+
 K80_time = {}
 for item in queue:
     K80_time[str(item)] = 0
@@ -104,10 +133,19 @@ gpu_usage_time = [] # don't initialize this
 gpu_usage = []
 gpu_usage_completion = []
 
+# TODO: here speedup should just be K80_time / V100_time
+speedup_dict = {}
+for item in queue:
+    speedup_dict[str(item)] = 0 
+
+birthplace = {}
+for item in queue:
+    birthplace[str(item)] = 'none' 
+
 index = 0
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 8
+V100_cap = 4
 K80_used = 0
 V100_used = 0
 K80_per_node = 8
@@ -119,11 +157,13 @@ for i in range(K80_cap):
 V100_job = {}
 for i in range(V100_cap):
     V100_job[str(i)] = 'idle'
-qualified_job = []
+qualified_job = [] #TODO: don't think qualified job is needed anymore
+step1_job = []
+step2_job = []
 pc_job = []
 
-K80_node = ['c2178', 'c2182']
-V100_node = ['d1014', 'd1015']
+K80_node = ['c2177']
+V100_node = ['d1018']
 host_node = 'c0154'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
@@ -240,6 +280,65 @@ def K80_placement(K80_avail, new_pool):
     return mapping
 
 #aa = K80_placement(['0','1','2','3','4'], ['3','3','1','1','50'])
+
+# input: a list of jobs
+# output: a dict of jobs with their remaining time on K80 and V100
+# the remaining time on the other GPU type need to include migration overhead 
+# 1. ovhd_total: the mean is average migration overhead once
+# 2. 1st_ovhd: extra time spent on 1st epoch after migration
+# the returned dict looks like this {'50': [300, 150], '78': [1000, 300]}
+# if a job can't be migrated yet (not in step1_job list) it shouldn't be in the input list
+# elif a job can be migrated but have not been migrated or have been migration but does not have speedup yet
+# , it should have the other gpu type remaining time as migration overhead
+
+def get_remaining_time(job_list):
+    result_dict = {}
+    for job in job_list:
+        if job not in step1_job:
+            raise ValueError('Bug with promotion scheme, more jobs than free gpus')
+        elif job in step1_job and job not in step2_job:
+            K80_remain = job_remaining_batch[job] * K80_batch_time[job]
+            V100_remain = job_remaining_batch[job] * V100_batch_time[job]
+            # this is not accurate, but just to force job to run on the other GPU type not profiled
+            if birthplace[job] in K80_node:
+                result_dict[job] = [2 * K80_remain, 0]
+            elif birthplace[job] in V100_node:
+                result_dict[job] = [0, 2 * V100_remain]
+        else: # job has its K80_batch_time and V100_batch_time profiled
+            K80_remain = job_remaining_batch[job] * K80_batch_time[job]
+            V100_remain = job_remaining_batch[job] * V100_batch_time[job]
+            K80_mig_ovhd = np.mean(ovhd_total[job]) + K80_1st_ovhd[job]
+            V100_mig_ovhd = np.mean(ovhd_total[job]) + V100_1st_ovhd[job]
+            if job in list(K80_job.values()):
+                result_dict[job] = [K80_remain, V100_remain + V100_mig_ovhd]
+            elif job in list(V100_job.values()):
+                result_dict[job] = [K80_remain + K80_mig_ovhd, V100_remain]
+    return result_dict
+
+def optimize_promotion(job_remaining_time, K80_avail, V100_avail, multigpu_list):
+    '''
+    Explanation: this function returns the optimal solution for which job should run on which GPU type. 
+    Currently considered GPU types are K80 and V100 only
+    param job_remaining_time: this is a dict containing the job remaining time running on each GPU type
+        The remaining time includes migration cost if it's to be run on another GPU type
+        e.g. {'1':[300,100],'30':[10000,0],'45':[4000,3000],'60':[0,500]}
+        for job 1: its remaining time on K80 is 300s, on V100 is 100s
+        for job30: its remaining time on K80 is 10000s, but it has not been profiled on V100, so the V100 
+                remaining time is forced to be 0, encouraging job profiling on V100
+        for job45: remaining time on K80 is 4000s, on V100 is 3000s
+        for job60: remaining time on V100 is 500s, encouraging job profiling on K80
+    param K80_avail: number of K80s available for jobs to run on
+        e.g. 6: 6 K80 GPUs are available for current jobs to run on
+    param V100_avail: similar to K80_avail
+    param multigpu_list: a list containing the 2-gpu jobs only
+        e.g. ['1', '2', '3']: job1, job2, job3 are 2-gpu jobs. all other jobs are 1-gpu jobs
+    return: a dict containing each job and its GPU type to run on
+        e.g. {'1':1, '30':1, '45':0, '60':0}
+        job1, job30 runs on V100
+        job45, job60 runs on K80
+    Note: for newly started job that have not even finished profiling on its starting GPU type, it should
+        not be included in the discussion. Its occupied GPU should also not count towards K80/V100_avail
+    '''
 
 # jobs in K80 and in new pool compete for reserved V100 spots by random chance
 # for 2-gpu jobs, the job will have duplicated entry in new_pool and promote_list
@@ -428,6 +527,9 @@ def thread_function():
                     global V100_time
                     global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
                     global b_start, c_start, d_start, completion
+                    global step1_job, step2_job
+                    global V100_batch_time, K80_batch_time, job_remaining_batch, speedup_dict
+                    global K80_1st_ovhd, V100_1st_ovhd
                     if 'ckpt_qual' in data_str:
                         global ckpt_qual_dict
                         job_name = data_str.split(' ')[0]
@@ -494,6 +596,40 @@ def thread_function():
                         job = job_name.replace('job','')
                         completion_portion = float(data_str.split(' ')[2])
                         completion[job] = completion_portion
+                    elif 'batch_time' in data_str: # 'job50 batch_time 0.042'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        batch_time = float(data_str.split(' ')[2])
+                        # also step1_job and step2_job
+                        # if job birthplace is K80, K80_batch_time is collected, then step1 complete
+                        if job in list(K80_job.values()) and K80_batch_time[job] == 0:
+                            K80_batch_time[job] = batch_time
+                            if birthplace[job] in K80_node:
+                                step1_job.append(job)
+                            elif birthplace[job] in V100_node:
+                                step2_job.append(job)
+                                speedup_dict[job] = round(K80_batch_time[job] / V100_batch_time[job], 3)
+                        elif job in list(V100_job.values()) and V100_batch_time[job] == 0:
+                            V100_batch_time[job] = batch_time
+                            if birthplace[job] in V100_node:
+                                step1_job.append(job)
+                            elif birthplace[job] in K80_node:
+                                step2_job.append(job)
+                                speedup_dict[job] = round(K80_batch_time[job] / V100_batch_time[job], 3)
+                    elif 'remain_batch' in data_str: # 'job50 remain_batch 156300'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        remaining_batch = int(data_str.split(' ')[2])
+                        job_remaining_batch[job] = remaining_batch 
+                    elif '1st_ovhd' in data_str: # 'job50 1st_ovhd 4.99'
+                        job_name = data_str.split(' ')[0]
+                        job = job_name.replace('job','')
+                        ovhd_time = float(data_str.split(' ')[2])
+                        if job in list(K80_job.values()) and K80_1st_ovhd[job] == 0:
+                            K80_1st_ovhd[job] = ovhd_time
+                        elif job in list(V100_job.values()) and V100_1st_ovhd[job] == 0:
+                            V100_1st_ovhd[job] = ovhd_time
+                       
 #                    if 'ckpt_qual' in data_str or 'finish' in data_str or 'checkpoint' in data_str:
 #                        print('received ' + data_str)
                     connection.sendall(b'success')
@@ -532,7 +668,7 @@ while True:
                 print('V100 finished job: ' + job)
 
     ################ 
-
+#TODO: resume from here
     ################ submit new jobs to vacant K80 GPUs ############################
 
     # check if there are vacant K80s
