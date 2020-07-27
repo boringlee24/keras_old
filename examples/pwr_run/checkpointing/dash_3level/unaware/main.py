@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_100.json', 'r') as fp:
+with open('../../dash/job_trace/job_queue_100.json', 'r') as fp:
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 

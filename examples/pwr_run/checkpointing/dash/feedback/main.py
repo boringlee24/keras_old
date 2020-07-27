@@ -15,6 +15,7 @@ import _thread
 import signal
 from datetime import datetime
 import csv
+import dash_opt
 
 parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
@@ -72,12 +73,6 @@ for item in queue:
 ovhd_total = {} # {1: [10, 12, ...], 2: [xx]} 
 for item in queue:
     ovhd_total[str(item)] = []
-k80_1st = {}
-for item in queue:
-    k80_1st[str(item)] = []
-v100_1st = {}
-for item in queue:
-    v100_1st[str(item)] = []
 
 num_mig = {} # initialize migration time to 0
 for item in queue:
@@ -157,7 +152,6 @@ for i in range(K80_cap):
 V100_job = {}
 for i in range(V100_cap):
     V100_job[str(i)] = 'idle'
-qualified_job = [] #TODO: don't think qualified job is needed anymore
 step1_job = []
 step2_job = []
 pc_job = []
@@ -231,36 +225,46 @@ def get_avail_id(gpu_dict):
     # input is K80_job or V100_job (dict)
     key_list = list(gpu_dict.keys())
     value_list = list(gpu_dict.values())
-    indexs = [j for j, e in enumerate(value_list) if e == 'reserved' or e == 'idle']
+    indexs = [j for j, e in enumerate(value_list) if e == 'idle']
     return [key_list[j] for j in indexs]
 
 # 2-gpu jobs in new_pool have duplicated items
-# returns mapping
-def K80_placement(K80_avail, new_pool):
+# returns mapping of jobs in "new_pool" to GPUs
+def GPU_placement(GPU_avail, new_pool, gpu_type='K80', raise_error=True):
     mapping = {}
     skip = False
     res_group = [] # group reserved GPU together
-    for i in range(len(K80_avail)):
+    for i in range(len(GPU_avail)):
         if skip:
             skip = False
             continue
         else:
             # two gpus from the same node
-            if i!=len(K80_avail)-1 and int(K80_avail[i])//K80_per_node==int(K80_avail[i+1])//K80_per_node:
+            if gpu_type == 'K80':
+                GPU_per_node = K80_per_node
+            elif gpu_type == 'V100':
+                GPU_per_node = V100_per_node
+            if i!=len(GPU_avail)-1 and int(GPU_avail[i])//GPU_per_node==int(GPU_avail[i+1])//GPU_per_node:
                 skip = True
-                res_group.append([K80_avail[i], K80_avail[i+1]])
+                res_group.append([GPU_avail[i], GPU_avail[i+1]])
             else:
-                res_group.append([K80_avail[i]])
+                res_group.append([GPU_avail[i]])
     group_1gpu = [i for i in res_group if len(i) == 1] # 1gpu id
     group_2gpu = [i for i in res_group if len(i) == 2] # 2gpu id
     pool_1gpu = [i for i in new_pool if i not in multigpu_list] # 1gpu job
     pool_2gpu = [i for i in new_pool if i in multigpu_list] # 2gpu job
-    if len(K80_avail) < len(new_pool) or 2*len(group_2gpu) < len(pool_2gpu):
-        raise ValueError('Bug with K80 placement for new jobs, more jobs than free gpus')
+    if len(GPU_avail) < len(new_pool) or 2*len(group_2gpu) < len(pool_2gpu):
+        if raise_error:
+            if gpu_type == 'K80':
+                raise ValueError('Bug with K80 placement for new jobs, more jobs than free gpus')
+            elif gpu_type == 'V100':
+                raise ValueError('Bug with V100 placement for new jobs, more jobs than free gpus')
+        else:
+            return mapping
     # if there is no 2-gpu job
     if set(new_pool).isdisjoint(multigpu_list):
         for i in range(len(new_pool)):
-            mapping[new_pool[i]] = K80_avail[i]
+            mapping[new_pool[i]] = GPU_avail[i]
     else:
         # first, fill in all 1gpu slots with 1-gpu jobs as much as possible
         for i in group_1gpu[:]:
@@ -314,136 +318,6 @@ def get_remaining_time(job_list):
             elif job in list(V100_job.values()):
                 result_dict[job] = [K80_remain + K80_mig_ovhd, V100_remain]
     return result_dict
-
-def optimize_promotion(job_remaining_time, K80_avail, V100_avail, multigpu_list):
-    '''
-    Explanation: this function returns the optimal solution for which job should run on which GPU type. 
-    Currently considered GPU types are K80 and V100 only
-    param job_remaining_time: this is a dict containing the job remaining time running on each GPU type
-        The remaining time includes migration cost if it's to be run on another GPU type
-        e.g. {'1':[300,100],'30':[10000,0],'45':[4000,3000],'60':[0,500]}
-        for job 1: its remaining time on K80 is 300s, on V100 is 100s
-        for job30: its remaining time on K80 is 10000s, but it has not been profiled on V100, so the V100 
-                remaining time is forced to be 0, encouraging job profiling on V100
-        for job45: remaining time on K80 is 4000s, on V100 is 3000s
-        for job60: remaining time on V100 is 500s, encouraging job profiling on K80
-    param K80_avail: number of K80s available for jobs to run on
-        e.g. 6: 6 K80 GPUs are available for current jobs to run on
-    param V100_avail: similar to K80_avail
-    param multigpu_list: a list containing the 2-gpu jobs only
-        e.g. ['1', '2', '3']: job1, job2, job3 are 2-gpu jobs. all other jobs are 1-gpu jobs
-    return: a dict containing each job and its GPU type to run on
-        e.g. {'1':1, '30':1, '45':0, '60':0}
-        job1, job30 runs on V100
-        job45, job60 runs on K80
-    Note: for newly started job that have not even finished profiling on its starting GPU type, it should
-        not be included in the discussion. Its occupied GPU should also not count towards K80/V100_avail
-    '''
-
-# jobs in K80 and in new pool compete for reserved V100 spots by random chance
-# for 2-gpu jobs, the job will have duplicated entry in new_pool and promote_list
-# V100_avail is a list with gpuid that is reserved or idle
-# random promo does not have job demotion
-# 1st return: list of job that starts on V100. 2nd return: list of job that promotes to V100
-# 3rd return: dict of mapping {'50':'5', '3':'1,2'} means job50 runs on gpuid 5, job3 runs on gpuid 1,2
-def random_promotion(V100_avail, new_pool, promote_list):
-    V100_pool = new_pool + promote_list 
-    mapping = {}
-    ####### this is only used in specific cases ##########
-    # group two gpus in same node together
-    # [1,2,3,5,8] -> [[1,2],[3],[5,8]]
-    skip = False
-    res_group = [] # group reserved GPU together
-    for i in range(len(V100_avail)):
-        if skip:
-            skip = False
-            continue
-        else:
-            # two gpus from the same node
-            if i!=len(V100_avail)-1 and int(V100_avail[i])//V100_per_node==int(V100_avail[i+1])//V100_per_node:
-                skip = True
-                res_group.append([V100_avail[i], V100_avail[i+1]])
-            else:
-                res_group.append([V100_avail[i]])
-    group_1gpu = [i for i in res_group if len(i) == 1] # 1gpu id
-    group_2gpu = [i for i in res_group if len(i) == 2] # 2gpu id
-    pool_1gpu = [i for i in V100_pool if i not in multigpu_list] # 1gpu job
-    pool_2gpu = [i for i in V100_pool if i in multigpu_list] # 2gpu job
-    ########################################################
-
-    if len(V100_avail) >= len(V100_pool) and 2*len(group_2gpu) >= len(pool_2gpu):
-        # this means all jobs get to run on V100
-        sorted_pool = V100_pool
-        # if there is no 2-gpu job
-        if set(V100_pool).isdisjoint(multigpu_list):
-            for i in range(len(sorted_pool)):
-                mapping[sorted_pool[i]] = V100_avail[i]
-        # there are 2-gpu jobs
-        else:
-            # first, fill in all 1gpu slots with 1-gpu jobs as much as possible
-            for i in group_1gpu[:]:
-                if len(pool_1gpu) > 0:
-                    mapping[pool_1gpu[0]] = i[0]
-                    pool_1gpu.pop(0)
-            for i in group_2gpu[:]:
-                if len(pool_2gpu) > 1:
-                    mapping[pool_2gpu[0]] = ','.join(i)
-                    pool_2gpu = [i for i in pool_2gpu if i != pool_2gpu[0]]
-                elif len(pool_1gpu) > 0:
-                    mapping[pool_1gpu[0]] = i[0]
-                    if len(pool_1gpu) > 1:
-                        mapping[pool_1gpu[1]] = i[1]
-                        pool_1gpu.pop(1)
-                    pool_1gpu.pop(0)
-    else:
-        # if there are no 2-gpu jobs at all
-        if set(V100_pool).isdisjoint(multigpu_list):
-            sorted_pool = random.sample(V100_pool, len(V100_avail))
-            for i in range(len(sorted_pool)):
-                mapping[sorted_pool[i]] = V100_avail[i]
-        # if there are 2-gpu jobs but no reserved spots for it
-        elif len(group_2gpu) == 0:
-            # remove 2-gpu jobs from V100_pool
-            V100_pool = [i for i in V100_pool if i not in multigpu_list]
-            num_sample = min(len(V100_avail), len(V100_pool)) # in case jobs are less than slots after reduction
-            sorted_pool = random.sample(V100_pool, num_sample)
-            for i in range(len(sorted_pool)):
-                mapping[sorted_pool[i]] = V100_avail[i]
-        # if there are 2-gpu jobs with available spots
-        else:
-            print('there are 2-gpu jobs with available 2-gpu slots')
-            print('V100 pool:', V100_pool)
-            sorted_pool = []
-            for i in group_1gpu[:]:
-                if len(pool_1gpu) > 0:
-                    picked = random.choice(pool_1gpu)
-                    sorted_pool.append(picked)
-                    pool_1gpu.remove(picked)
-                    V100_pool.remove(picked)
-                    mapping[picked] = i[0]
-            for i in group_2gpu[:]:
-                picked = random.choice(V100_pool)
-                if picked in pool_2gpu:
-                    sorted_pool.append(picked)
-                    sorted_pool.append(picked)
-                    V100_pool = [i for i in V100_pool if i != picked]
-                    pool_2gpu = [i for i in pool_2gpu if i != picked]
-                    mapping[picked] = ','.join(i)
-                else:
-                    # pick another 1-gpu job to fill in the 2-gpu slot
-                    sorted_pool.append(picked)
-                    pool_1gpu.remove(picked)
-                    V100_pool.remove(picked)
-                    mapping[picked] = i[0]
-                    picked_2 = random.choice(pool_1gpu)
-                    sorted_pool.append(picked_2)
-                    pool_1gpu.remove(picked_2)
-                    V100_pool.remove(picked_2)
-                    mapping[picked_2] = i[1]
-            print('picked jobs:', sorted_pool)
-    start_list = list(set(sorted_pool).intersection(new_pool))
-    promo_list = list(set(sorted_pool).intersection(promote_list))
-    return start_list, promo_list, mapping
 
 #d, e, f = random_promotion(['0','1','4','8'], ['3','3','1','1'], [])
 
@@ -525,7 +399,7 @@ def thread_function():
                     global V100_job
                     global K80_time
                     global V100_time
-                    global ovhd_a, ovhd_b, ovhd_c, ovhd_d, k80_1st, v100_1st, ovhd_start, overhead, ovhd_total
+                    global ovhd_a, ovhd_b, ovhd_c, ovhd_d, ovhd_start, overhead, ovhd_total
                     global b_start, c_start, d_start, completion
                     global step1_job, step2_job
                     global V100_batch_time, K80_batch_time, job_remaining_batch, speedup_dict
@@ -583,14 +457,6 @@ def thread_function():
                                 K80_start_time[job] = time.time()
                             elif job in list(V100_job.values()):
                                 V100_start_time[job] = time.time()
-                    elif '1st_epoch' in data_str: # 'job50 1st_epoch 35'
-                        job_name = data_str.split(' ')[0]
-                        job = job_name.replace('job','')
-                        epoch_time = int(data_str.split(' ')[2])
-                        if job in list(K80_job.values()):
-                            k80_1st[job].append(epoch_time)
-                        elif job in list(V100_job.values()):
-                            v100_1st[job].append(epoch_time)
                     elif 'completion' in data_str: # 'job50 completion 0.33'
                         job_name = data_str.split(' ')[0]
                         job = job_name.replace('job','')
@@ -667,16 +533,9 @@ while True:
                 V100_job[gpu] = 'idle'
                 print('V100 finished job: ' + job)
 
-    ################ 
-#TODO: resume from here
     ################ submit new jobs to vacant K80 GPUs ############################
 
-    # check if there are vacant K80s
-    ## yes: submit jobs from queue
-    ## no: do nothing
-    # here, just check how many new jobs can get started on idle GPUs and put them in new_pool[]. 
-    # But do not allocate any GPU for the jobs yet.
-    new_pool = []
+    # first fill in vacant V100s
     if V100_used < V100_cap:
         V100_free = V100_cap - V100_used
         for i in range(V100_free):
@@ -684,25 +543,41 @@ while True:
             if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
                 job_new = str(queue[index])
                 if job_new in multigpu_list:
-                    idle_gpus = detect_2_gpus(V100_job, V100_per_node)[:2]
+                    # find 2 gpus in the same node to schedule it
+                    idle_gpus = detect_2_gpus(V100_job, V100_per_node)
                     if len(idle_gpus) > 0:
-                        index += 1
-                        qualified_job.append(job_new)
-                        # new_pool will have duplicated job for 2-gpu ones
+                        node_string = ''
                         for gpu in idle_gpus:
-                            new_pool.append(job_new) 
-                            V100_job[gpu] = 'reserved' 
-                            V100_used += 1 
+                            real_node, real_gpu = V100_LUT(gpu)
+                            if gpu == idle_gpus[1]:
+                                gpu_str += real_gpu
+                                node_string = real_node
+                                job_start[job_new] = time.time()
+                                queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                                V100_start_time[job_new] = time.time()
+                                index += 1
+                            else:
+                                gpu_str = real_gpu + ','
+                            V100_job[gpu] = job_new
+                            V100_used += 1
+                        start_job(node_string, gpu_str, job_new)
+                        birthplace[job_new] = node_string
+                        time.sleep(5) # don't communicate too often
                 else:
                     for gpu, job in V100_job.items():
                         if job == 'idle': # schedule new job here if idle
-                            new_pool.append(job_new)
-                            qualified_job.append(job_new)
-                            V100_job[gpu] = 'reserved'
+                            real_node, real_gpu = V100_LUT(gpu)
+                            start_job(real_node, real_gpu, job_new)
+                            birthplace[job_new] = real_node
+                            V100_job[gpu] = job_new
+                            job_start[job_new] = time.time()
+                            queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                            V100_start_time[job_new] = time.time()
                             index += 1
                             V100_used += 1
+                            time.sleep(5) # don't communicate too often
                             break
-
+    # first fill in vacant K80s
     if K80_used < K80_cap:
         K80_free = K80_cap - K80_used
         for i in range(K80_free):
@@ -710,35 +585,125 @@ while True:
             if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
                 job_new = str(queue[index])
                 if job_new in multigpu_list:
-                    idle_gpus = detect_2_gpus(K80_job, K80_per_node)[:2]
+                    # find 2 gpus in the same node to schedule it
+                    idle_gpus = detect_2_gpus(K80_job, K80_per_node)
                     if len(idle_gpus) > 0:
-                        index += 1
-                        qualified_job.append(job_new)
+                        node_string = ''
                         for gpu in idle_gpus:
-                            new_pool.append(job_new) 
-                            K80_job[gpu] = 'reserved' 
-                            K80_used += 1 
+                            real_node, real_gpu = K80_LUT(gpu)
+                            if gpu == idle_gpus[1]:
+                                gpu_str += real_gpu
+                                node_string = real_node
+                                job_start[job_new] = time.time()
+                                queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                                K80_start_time[job_new] = time.time()
+                                index += 1
+                            else:
+                                gpu_str = real_gpu + ','
+                            K80_job[gpu] = job_new
+                            K80_used += 1
+                        start_job(node_string, gpu_str, job_new)
+                        birthplace[job_new] = node_string
+                        time.sleep(5) # don't communicate too often
                 else:
                     for gpu, job in K80_job.items():
                         if job == 'idle': # schedule new job here if idle
-                            new_pool.append(job_new)
-                            qualified_job.append(job_new)
-                            K80_job[gpu] = 'reserved'
+                            real_node, real_gpu = K80_LUT(gpu)
+                            start_job(real_node, real_gpu, job_new)
+                            birthplace[job_new] = real_node
+                            K80_job[gpu] = job_new
+                            job_start[job_new] = time.time()
+                            queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
+                            K80_start_time[job_new] = time.time()
                             index += 1
                             K80_used += 1
+                            time.sleep(5) # don't communicate too often
                             break
 
-    # make promotion decisions
-    V100_avail = get_avail_id(V100_job)
-    promote_list = [i for i in list(K80_job.values()) if i in qualified_job]
+    ################## make promotion decisions ################
+    # figure out which job enters the pool and which GPUs enter the pool
+    # job must be in step1_job, and if it's on V100, it must have passed demote_qualify_time (TODO: demote_list)
+    # the selected job's current GPU also enters GPU pool. And if GPU is idle, it gets added into the pool as well
+    job_pool = []
+    K80_pool = []
+    V100_pool = []
+    for gpu, job in K80_job.items():
+        if job in step1_job:
+            if job not in job_pool: # for 2-gpu jobs, add the job once, but add both gpus
+                job_pool.append(job)
+            K80_pool.append(gpu)
+        elif job == 'idle':
+            K80_pool.append(gpu)
+    for gpu, job in V100_job.items():
+        if job in step1_job:
+            if job not in job_pool: # for 2-gpu jobs, add the job once, but add both gpus
+                job_pool.append(job)
+            V100_pool.append(gpu)
+        elif job == 'idle':
+            V100_pool.append(gpu)
+    
+    # prepare inputs and perform optimization
+    num_GPUs = [len(K80_pool), len(V100_pool)]
+    job_num_GPUs = {}
+    for job in job_pool:
+        if job in multigpu_list:
+            job_num_GPUs[job] = 2
+        else:
+            job_num_GPUs[job] = 1
+    job_remaining_time = get_remaining_time(job_pool)
 
+    # perform 1st optimization
+    opt_decision = dash_opt.optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
+
+    # check if placement of promo/demo 2-gpu jobs are viable
+    # if not viable: remove jobs that benefit least from promo/hurt least from demo
+    promoted = [] # jobs to be placed in V100. 2-gpu jobs are duplicated
+    demoted = [] # jobs to be placed in K80
+    for job, placement in opt_decision:
+        if placement == 1 and job in list(K80_job.values()):
+            promoted.append(job)
+            # duplicate the job if it's 2-gpu job
+            if job in multigpu_list:
+                promoted.append(job)
+        elif placement == 0 and job in list(V100_job.values()):
+            demoted.append(job)
+            # duplicate the job if it's 2-gpu job
+            if job in multigpu_list:
+                demoted.append(job)
+
+    if len(promoted) > 0:
+        print('original promotion (2-gpu dup)', promoted)
+    if len(demoted) > 0:
+        print('original demotion (2-gpu dup)', demoted)
+
+    # generate K80/V100 GPU list that are either idle or have job in promoted/demoted
+    # to be used by placement function
+    K80_avail = []
+    V100_avail = []
+    for gpu, job in K80_job.items():
+        if job == 'idle':
+            K80_avail.append(gpu)
+        elif job in promoted:
+            K80_avail.append(gpu)
+    for gpu, job in V100_job.items():
+        if job == 'idle':
+            V100_avail.append(gpu)
+        elif job in promoted:
+            V100_avail.append(gpu)
+
+    V100_place = GPU_placement(V100_avail, promoted, gpu_type='V100', raise_error=False)
+    K80_place = GPU_placement(K80_avail, demoted, gpu_type='K80', raise_error=False)
+
+    if V100_place == {} or K80_place == {}:
+        print('not enough local 2-gpu slots to perform this optimization')
+        # there are promoted/demoted 2-gpu job that don't fit in target GPU with locality constraint
+        if V100_place == {}: # need to remove 2-gpu job from promoted
+            #TODO: or come up with a new constraint
+
+    # make promotion decisions
     if len(promote_list) > 0 or len(new_pool) > 0:
         # started and promoted do not have duplicated elements
         started, promoted, mapping = random_promotion(V100_avail, new_pool, promote_list)
-        if len(started) > 0:
-            print('jobs starting on V100: ', started)
-        if len(promoted) > 0:
-            print('promoted jobs: ', promoted)
         # stop all promoted jobs on K80
         checkpoint_finish_check = []
         for job in promoted[:]:
@@ -861,14 +826,6 @@ while True:
                         new_pool.remove(job)
                     start_job(node_string, gpu_str, job)
 
-        # 3. change 'reserved' status to 'idle' if there are any
-        for key, value in K80_job.items():
-            if value == 'reserved':
-                K80_job[key] = 'idle'
-        for key, value in V100_job.items():
-            if value == 'reserved':
-                V100_job[key] = 'idle'
-
         # perform a check, make sure all promoted/demoted jobs are scheduled
         if len(promoted) > 0 or len(new_pool) > 0:
             raise ValueError('Bug with promotion scheme, more jobs than free gpus')
@@ -923,9 +880,14 @@ ovhd_b_name = testcase + '_ovhd_b.json'
 ovhd_c_name = testcase + '_ovhd_c.json'
 ovhd_d_name = testcase + '_ovhd_d.json'
 ovhd_total_name = testcase + '_ovhd_total.json'
-k80_1st_name = testcase + '_k80_1st.json'
-v100_1st_name = testcase + '_v100_1st.json'
+K80_1st_ovhd_name = testcase + '_K80_1st_ovhd.json'
+V100_1st_ovhd_name = testcase + '_V100_1st_ovhd.json'
 queue_delay_name = testcase + '_queue_delay.json'
+K80_batch_time_name = testcase + '_K80_batch_time.json'
+V100_batch_time_name = testcase + '_V100_batch_time.json'
+birthplace_name = testcase + '_birthplace.json'
+speedup_name = testcase + '_speedup.json'
+job_remaining_batch_name = 'job_remaining_batch.json'
 
 with open(JCT_name, 'w') as fp1:
     json.dump(JCT, fp1, sort_keys=True, indent=4)
@@ -953,14 +915,24 @@ with open(ovhd_d_name, 'w') as fp3:
     json.dump(ovhd_d, fp3, sort_keys=True, indent=4)
 with open(ovhd_total_name, 'w') as fp3:
     json.dump(ovhd_total, fp3, sort_keys=True, indent=4)
-with open(k80_1st_name, 'w') as fp3:
-    json.dump(k80_1st, fp3, sort_keys=True, indent=4)
-with open(v100_1st_name, 'w') as fp3:
-    json.dump(v100_1st, fp3, sort_keys=True, indent=4)
+with open(K80_1st_ovhd_name, 'w') as fp3:
+    json.dump(K80_1st_ovhd, fp3, sort_keys=True, indent=4)
+with open(V100_1st_ovhd_name, 'w') as fp3:
+    json.dump(V100_1st_ovhd, fp3, sort_keys=True, indent=4)
 with open(completion_name, 'w') as fp1:
    json.dump(completion, fp1, sort_keys=True, indent=4)
 with open(queue_delay_name, 'w') as fp1:
    json.dump(queue_delay, fp1, sort_keys=True, indent=4)
+with open(K80_batch_time_name, 'w') as fp3:
+    json.dump(K80_batch_time, fp3, sort_keys=True, indent=4)
+with open(V100_batch_time_name, 'w') as fp3:
+    json.dump(V100_batch_time, fp3, sort_keys=True, indent=4)
+with open(birthplace_name, 'w') as fp1:
+   json.dump(birthplace, fp1, sort_keys=True, indent=4)
+with open(speedup_name, 'w') as fp1:
+   json.dump(speedup_dict, fp1, sort_keys=True, indent=4)
+with open(job_remaining_batch_name, 'w') as fp1:
+   json.dump(job_remaining_batch, fp1, sort_keys=True, indent=4)
 
 gpu_usage_time = np.asarray(gpu_usage_time)
 gpu_usage = np.asarray(gpu_usage)

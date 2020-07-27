@@ -128,7 +128,7 @@ host_node = 'c0184'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
-INTERVAL = 10 # make decision every 30s TODO
+INTERVAL = 30 # make decision every 30s
 
 # function to detect if there are two free or reserved GPUs in a node
 # returns an empty list if there is none, otherwise returns list with gpu id in V100/K80_jobs
@@ -712,7 +712,6 @@ while True:
                         V100_job[g] = job
                         new_pool.remove(job)
                     else: # mapped to P100
-                        pdb.set_trace()
                         real_g = str(int(g) - V100_cap)
                         real_node, real_gpu = P100_LUT(real_g)
                         if g == gpu_split[1]:
