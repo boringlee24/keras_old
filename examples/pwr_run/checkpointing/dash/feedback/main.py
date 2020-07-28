@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_30.json', 'r') as fp: #TODO
+with open('../job_trace/job_queue_50.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -708,6 +708,8 @@ while True:
                 k80_1st_ovhd = K80_1st_ovhd[job]
                 v100_1st_ovhd = V100_1st_ovhd[job]
                 demote_qualify_time = (2 * job_ovhd + k80_1st_ovhd + v100_1st_ovhd) / job_speedup
+                if job_speedup == 0 or speedup_dict[job] == 0:
+                    pdb.set_trace()
                 if len(v100_1st[job]) > 0:
                     v100_1st_epoch = max(v100_1st[job])
                 else:

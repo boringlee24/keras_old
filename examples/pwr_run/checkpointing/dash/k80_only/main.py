@@ -105,7 +105,7 @@ host_node = 'c0200'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
-INTERVAL = 30 # make decision every 30s 
+INTERVAL = 10 # make decision every 30s 
 
 def K80_LUT(gpu):
     quotient = int(gpu) // 8
@@ -372,7 +372,8 @@ while True:
                     checkpoint_finish_check.remove(job)
             if len(checkpoint_finish_check) == 0:
                 break
-        # give it some time to cleanup old checkpointed jobs
+    # give it some time to cleanup old checkpointed jobs
+    time.sleep(5)
 
     ################ submit new jobs to vacant K80 GPUs ############################
     # first fill in vacant K80s

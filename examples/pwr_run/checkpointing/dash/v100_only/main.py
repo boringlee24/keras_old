@@ -105,7 +105,7 @@ host_node = 'c0177'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
-INTERVAL = 30 # make decision every 30s 
+INTERVAL = 10 # make decision every 30s 
 
 def K80_LUT(gpu):
     quotient = int(gpu) // 8
@@ -372,7 +372,8 @@ while True:
                     checkpoint_finish_check.remove(job)
             if len(checkpoint_finish_check) == 0:
                 break
-        # give it some time to cleanup old checkpointed jobs
+    # give it some time to cleanup old checkpointed jobs
+    time.sleep(5)
 
     ################ submit new jobs to vacant K80 GPUs ############################
     # first fill in vacant V100s
@@ -436,6 +437,8 @@ while True:
     if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
         print('all jobs are finished!')
         break
+    if index == len(queue):
+        print(V100_job)
 
 # get average JCT
 average_JCT = np.average(list(JCT.values()))
