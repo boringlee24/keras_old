@@ -46,13 +46,13 @@ def optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time):
     return job_GPU_types
 
 
-num_GPUs = [8, 2]  # K80, #P100, #V100 (order doesn't matter)
-job_num_GPUs = {'1': 1, '3': 1, '4': 2, '17': 1, '30': 1,
-                '45': 1, '60': 3}  # number of GPUs that the job is running on
-job_remaining_time = {'1': [300, 100], '3': [300, 100], '4': [500, 0], '17': [400, 300], '30': [
-    100, 0], '45': [400, 300], '60': [600, 500]}  # same order of runtimes as in 'num_GPUs'
-
-# GPU id in the same order as 'num_GPUs'
-job_GPU_types = optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
-
-print(job_GPU_types)
+#num_GPUs = [8, 4]  # K80, #P100, #V100 (order doesn't matter)
+#job_num_GPUs = {'1': 1}#, '3': 1, '4': 2, '17': 1, '30': 1}#,
+##                '45': 1, '60': 3}  # number of GPUs that the job is running on
+#job_remaining_time = {'1': [0, 290]}#, '3': [300, 100], '4': [500, 0], '17': [400, 300], '30': [
+##    100, 0]}#, '45': [400, 300], '60': [600, 500]}  # same order of runtimes as in 'num_GPUs'
+#
+## GPU id in the same order as 'num_GPUs'
+#job_GPU_types = optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
+#
+#print(job_GPU_types)

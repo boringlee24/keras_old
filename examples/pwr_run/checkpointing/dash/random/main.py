@@ -124,7 +124,7 @@ pc_job = []
 
 K80_node = ['c2178', 'c2182']
 V100_node = ['d1014', 'd1015']
-host_node = 'c0154'
+host_node = 'c0200'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -606,19 +606,29 @@ while True:
         # stop all promoted jobs on K80
         checkpoint_finish_check = []
         for job in promoted[:]:
-            # need to find its current gpu on K80
-            current_gpu = ''
-            for gpu, job_K in K80_job.items():
-                if job_K == job:
-                    current_gpu = gpu
-                    break
-            real_node, real_gpu = K80_LUT(current_gpu)
+            if job not in multigpu_list:
+                # need to find its current gpu on K80
+                current_gpu = ''
+                for gpu, job_K in K80_job.items():
+                    if job_K == job:
+                        current_gpu = gpu
+                        break
+                real_node, real_gpu = K80_LUT(current_gpu)
+                K80_job[current_gpu] = 'idle'
+                K80_used -= 1
+            else:
+                current_gpu = []
+                for gpu, job_K in K80_job.items():
+                    if job_K == job:
+                        current_gpu.append(gpu)
+                real_node, real_gpu = K80_LUT(current_gpu[0])
+                for item in current_gpu:
+                    K80_job[item] = 'idle'
+                    K80_used -= 1
             save_job(real_node, job)
             if finish_dict['job'+job] != 1:
                 K80_time[job] += int(time.time() - K80_start_time[job])
             checkpoint_finish_check.append(job)
-            K80_job[current_gpu] = 'idle'
-            K80_used -= 1
 
         # wait for all GPUs to be available
         if len(checkpoint_finish_check) > 0:
