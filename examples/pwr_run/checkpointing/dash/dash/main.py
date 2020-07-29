@@ -378,6 +378,8 @@ def get_remaining_time(job_list):
     for job in job_list:
         if job not in step1_job:
             raise ValueError('Bug with promotion scheme, more jobs than free gpus')
+        # use prediction for remaining time on non-birth GPU
+        # also use a general migration overhead
         elif job in step1_job and job not in step2_job:
             K80_remain = job_remaining_batch[job] * K80_batch_time[job]
             V100_remain = job_remaining_batch[job] * V100_batch_time[job]

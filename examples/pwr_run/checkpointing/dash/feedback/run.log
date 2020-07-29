@@ -1,1 +1,190 @@
 starting up on c0167 port 10002
+connecting to d1014 port 10000
+sending b'start 4 gpu 0,1'
+connecting to d1014 port 10000
+sending b'start 5 gpu 2,3'
+connecting to d1015 port 10000
+sending b'start 6 gpu 0,1'
+connecting to d1015 port 10000
+sending b'start 2 gpu 2,3'
+job4qualified for demote for profiling
+job_pool: ['4'] K80_pool: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'] V100_pool: ['0', '1'] remain_time {'4': [0, 6834.24]} decision: {'4': 0}
+original demotion (2-gpu dup) ['4', '4']
+connecting to d1014 port 10000
+sending b'save 4 pid 128537'
+4 checkpointed successfully
+connecting to c2178 port 10000
+sending b'resume 4 gpu 0,1'
+connecting to d1014 port 10000
+sending b'start 1 gpu 0,1'
+connecting to c2178 port 10000
+sending b'start 7 gpu 2,3'
+job2qualified for demote for profiling
+job_pool: ['4', '2'] K80_pool: ['0', '1', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'] V100_pool: ['6', '7'] remain_time {'4': [0, 6834.24], '2': [0, 3493.92]} decision: {'4': 0, '2': 0}
+original demotion (2-gpu dup) ['2', '2']
+connecting to d1015 port 10000
+sending b'save 2 pid 364397'
+2 checkpointed successfully
+connecting to c2178 port 10000
+sending b'resume 2 gpu 4,5'
+connecting to d1015 port 10000
+sending b'start 3 gpu 2,3'
+connecting to c2178 port 10000
+sending b'start 95 gpu 6'
+job6qualified for demote for profiling
+job_pool: ['4', '2', '6'] K80_pool: ['0', '1', '4', '5', '7', '8', '9', '10', '11', '12', '13', '14', '15'] V100_pool: ['4', '5'] remain_time {'4': [0, 6834.24], '2': [4859.650000000001, 1793.44], '6': [0, 12141.72]} decision: {'4': 0, '2': 1, '6': 0}
+original promotion (2-gpu dup) ['2', '2']
+original demotion (2-gpu dup) ['6', '6']
+connecting to c2178 port 10000
+sending b'save 2 pid 63535'
+connecting to d1015 port 10000
+sending b'save 6 pid 364171'
+2 checkpointed successfully
+6 checkpointed successfully
+connecting to d1015 port 10000
+sending b'resume 2 gpu 0,1'
+connecting to c2178 port 10000
+sending b'resume 6 gpu 4,5'
+connecting to c2178 port 10000
+sending b'start 24 gpu 7'
+connecting to c2182 port 10000
+sending b'start 19 gpu 0'
+job5qualified for demote for profiling
+job_pool: ['4', '6', '95', '5'] K80_pool: ['0', '1', '4', '5', '6', '9', '10', '11', '12', '13', '14', '15'] V100_pool: ['2', '3'] remain_time {'4': [5044.32, 3512.56], '6': [0, 12141.72], '95': [9727.12, 0], '5': [0, 10219.824]} decision: {'4': 0, '6': 0, '95': 1, '5': 0}
+original promotion (2-gpu dup) ['95']
+original demotion (2-gpu dup) ['5', '5']
+connecting to c2178 port 10000
+sending b'save 95 pid 63793'
+connecting to d1014 port 10000
+sending b'save 5 pid 128763'
+95 checkpointed successfully
+5 checkpointed successfully
+connecting to d1014 port 10000
+sending b'resume 95 gpu 2'
+connecting to c2182 port 10000
+sending b'resume 5 gpu 1,2'
+connecting to d1014 port 10000
+sending b'start 78 gpu 3'
+connecting to c2178 port 10000
+sending b'start 85 gpu 6'
+job1qualified for demote for profiling
+job_pool: ['4', '7', '6', '19', '5', '1'] K80_pool: ['0', '1', '2', '3', '4', '5', '8', '9', '10', '11', '12', '13', '14', '15'] V100_pool: ['0', '1'] remain_time {'4': [4997.82, 3481.06], '7': [18967.656, 0], '6': [0, 12141.72], '19': [2055.456, 0], '5': [0, 10219.824], '1': [0, 1761.992]} decision: {'4': 0, '7': 1, '6': 0, '19': 0, '5': 0, '1': 0}
+original promotion (2-gpu dup) ['7', '7']
+original demotion (2-gpu dup) ['1', '1']
+connecting to c2178 port 10000
+sending b'save 7 pid 63367'
+connecting to d1014 port 10000
+sending b'save 1 pid 129051'
+7 checkpointed successfully
+1 checkpointed successfully
+connecting to d1014 port 10000
+sending b'resume 7 gpu 0,1'
+connecting to c2178 port 10000
+sending b'resume 1 gpu 2,3'
+connecting to c2182 port 10000
+sending b'start 14 gpu 3'
+connecting to c2182 port 10000
+sending b'start 92 gpu 4'
+job2qualified for demote for passing demote qualify time 103
+job3qualified for demote for profiling
+job_pool: ['4', '1', '6', '85', '19', '5', '2', '3'] K80_pool: ['0', '1', '2', '3', '4', '5', '6', '8', '9', '10', '13', '14', '15'] V100_pool: ['4', '5', '6', '7'] remain_time {'4': [4951.32, 3449.56], '1': [0, 1761.992], '6': [0, 12141.72], '85': [3845.736, 0], '19': [1957.856, 0], '5': [0, 10219.824], '2': [4560.85, 1636.5], '3': [0, 4524.564]} decision: {'4': 0, '1': 0, '6': 0, '85': 1, '19': 1, '5': 0, '2': 1, '3': 0}
+original promotion (2-gpu dup) ['85', '19']
+original demotion (2-gpu dup) ['3', '3']
+connecting to c2178 port 10000
+sending b'save 85 pid 64433'
+connecting to c2182 port 10000
+sending b'save 19 pid 118960'
+connecting to d1015 port 10000
+sending b'save 3 pid 364698'
+85 checkpointed successfully
+19 checkpointed successfully
+3 checkpointed successfully
+connecting to d1015 port 10000
+sending b'resume 85 gpu 2'
+connecting to d1015 port 10000
+sending b'resume 19 gpu 3'
+connecting to c2182 port 10000
+sending b'resume 3 gpu 0,5'
+connecting to c2178 port 10000
+sending b'start 76 gpu 6'
+connecting to c2182 port 10000
+sending b'start 66 gpu 6'
+job_pool: ['4', '1', '6', '3', '5', '2'] K80_pool: ['0', '1', '2', '3', '4', '5', '8', '9', '10', '13', '15'] V100_pool: ['4', '5'] remain_time {'4': [4886.22, 3405.46], '1': [0, 1761.992], '6': [12526.42, 6212.349999999999], '3': [0, 4524.564], '5': [0, 10219.824], '2': [4419.75, 1585.5]} decision: {'4': 0, '1': 0, '6': 1, '3': 0, '5': 0, '2': 0}
+original promotion (2-gpu dup) ['6', '6']
+original demotion (2-gpu dup) ['2', '2']
+connecting to c2178 port 10000
+sending b'save 6 pid 63983'
+connecting to d1015 port 10000
+sending b'save 2 pid 364905'
+6 checkpointed successfully
+2 checkpointed successfully
+connecting to d1015 port 10000
+sending b'resume 6 gpu 0,1'
+connecting to c2178 port 10000
+sending b'resume 2 gpu 4,5'
+connecting to c2182 port 10000
+sending b'start 88 gpu 7'
+job78qualified for demote for profiling
+job6qualified for demote for passing demote qualify time 496
+job19qualified for demote for passing demote qualify time 73
+job_pool: ['4', '1', '2', '76', '24', '3', '5', '66', '78', '6', '19'] K80_pool: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '13', '14'] V100_pool: ['3', '4', '5', '7'] remain_time {'4': [4849.0199999999995, 3380.26], '1': [0, 1761.992], '2': [4405.308, 1624.5533333333333], '76': [6774.99, 0], '24': [1223.88, 0], '3': [0, 4524.564], '5': [0, 10219.824], '66': [1548.8639999999998, 0], '78': [0, 1203.4879999999998], '6': [12657.53, 6088.259999999999], '19': [668.944, 117.72]} decision: {'4': 0, '1': 0, '2': 0, '76': 1, '24': 0, '3': 0, '5': 0, '66': 1, '78': 0, '6': 1, '19': 0}
+original promotion (2-gpu dup) ['76', '66']
+original demotion (2-gpu dup) ['78', '19']
+connecting to c2178 port 10000
+sending b'save 76 pid 64899'
+connecting to c2182 port 10000
+sending b'save 66 pid 120024'
+connecting to d1014 port 10000
+sending b'save 78 pid 129599'
+connecting to d1015 port 10000
+sending b'save 19 pid 365312'
+76 checkpointed successfully
+66 checkpointed successfully
+78 checkpointed successfully
+19 checkpointed successfully
+connecting to d1014 port 10000
+sending b'resume 76 gpu 3'
+connecting to d1015 port 10000
+sending b'resume 66 gpu 3'
+connecting to c2178 port 10000
+sending b'resume 78 gpu 6'
+connecting to c2182 port 10000
+sending b'resume 19 gpu 6'
+job_pool: ['4', '1', '2', '78', '24', '3', '5', '14', '19', '88', '6'] K80_pool: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '13', '14', '15'] V100_pool: ['4', '5'] remain_time {'4': [4793.22, 3342.46], '1': [0, 1761.992], '2': [4355.508, 1606.5533333333333], '78': [0, 1174.888], '24': [1158.0800000000002, 0], '3': [0, 4524.564], '5': [12633.036, 5255.386], '14': [25.44, 0], '19': [589.504, 137.07999999999998], '88': [3840.192, 0], '6': [12647.03, 6088.259999999999]} decision: {'4': 0, '1': 0, '2': 0, '78': 0, '24': 0, '3': 0, '5': 1, '14': 0, '19': 0, '88': 0, '6': 0}
+original promotion (2-gpu dup) ['5', '5']
+original demotion (2-gpu dup) ['6', '6']
+connecting to c2182 port 10000
+sending b'save 5 pid 119119'
+connecting to d1015 port 10000
+sending b'save 6 pid 365695'
+5 checkpointed successfully
+6 checkpointed successfully
+connecting to d1015 port 10000
+sending b'resume 5 gpu 0,1'
+connecting to c2182 port 10000
+sending b'resume 6 gpu 1,2'
+K80 finished job: 14
+connecting to c2182 port 10000
+sending b'start 41 gpu 3'
+job95qualified for demote for passing demote qualify time 234
+job5qualified for demote for passing demote qualify time 548
+job_pool: ['4', '1', '2', '78', '24', '3', '6', '19', '88', '95', '5'] K80_pool: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '13', '14', '15'] V100_pool: ['2', '4', '5'] remain_time {'4': [4737.42, 3304.66], '1': [0, 1761.992], '2': [4305.7080000000005, 1588.5533333333333], '78': [0, 1174.888], '24': [1092.28, 0], '3': [2999.6679999999997, 2451.032], '6': [12526.42, 6201.849999999999], '19': [572.912, 134.01999999999998], '88': [3757.5919999999996, 0], '95': [4503.21, 2603.912], '5': [12791.876, 5086.296]} decision: {'4': 0, '1': 0, '2': 0, '78': 0, '24': 0, '3': 0, '6': 0, '19': 0, '88': 1, '95': 0, '5': 1}
+original promotion (2-gpu dup) ['88']
+original demotion (2-gpu dup) ['95']
+connecting to c2182 port 10000
+sending b'save 88 pid 120252'
+connecting to d1014 port 10000
+sending b'save 95 pid 129399'
+88 checkpointed successfully
+95 checkpointed successfully
+connecting to d1014 port 10000
+sending b'resume 88 gpu 2'
+connecting to c2182 port 10000
+sending b'resume 95 gpu 7'
+job76qualified for demote for passing demote qualify time 81
+job66qualified for demote for passing demote qualify time 76
+job_pool: ['4', '1', '2', '78', '24', '3', '6', '92', '19', '95', '76', '5', '66'] K80_pool: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '13', '14', '15'] V100_pool: ['3', '4', '5', '7'] remain_time {'4': [4690.92, 3273.16], '1': [1446.616, 1085.0059999999999], '2': [4264.2080000000005, 1573.5533333333333], '78': [0, 1174.888], '24': [960.6800000000001, 0], '3': [2969.868, 2428.3320000000003], '6': [12526.42, 6202.349999999999], '92': [7886.004000000001, 0], '19': [524.112, 125.02], '95': [4447.56, 2648.4320000000002], '76': [2912.7250000000004, 525.0450000000001], '5': [12791.876, 5086.296], '66': [386.262, 84.25200000000001]} decision: {'4': 0, '1': 0, '2': 0, '78': 0, '24': 0, '3': 0, '6': 1, '92': 0, '19': 0, '95': 0, '76': 0, '5': 1, '66': 0}
+original promotion (2-gpu dup) ['6', '6']
+original demotion (2-gpu dup) ['76', '66']
+Notice: promoted/demoted jobs cannot fit in their destination due to locality
+Remove all 2-gpu jobs from this migration decision
