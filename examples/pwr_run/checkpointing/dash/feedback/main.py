@@ -347,14 +347,14 @@ def locality_check(K80_avail, V100_avail, promoted, demoted):
         if len(K80_avail) < len(demoted_1gpu):
             diff = len(demoted_1gpu) - len(K80_avail)
             for i in range(diff):
-                removed_1gpu = demoted[i]
+                removed_1gpu = demoted[0]
                 demoted.remove(removed_1gpu)
                 # also need to remove its corresponding GPU
                 V100_avail.remove(demoted_V100_map_1gpu[removed_1gpu])
         elif len(V100_avail) < len(promoted_1gpu):
             diff = len(promoted_1gpu) - len(V100_avail)
             for i in range(diff):
-                removed_1gpu = promoted[i]
+                removed_1gpu = promoted[0]
                 promoted.remove(removed_1gpu)
                 # also need to remove its corresponding GPU
                 K80_avail.remove(promoted_K80_map_1gpu[removed_1gpu])
