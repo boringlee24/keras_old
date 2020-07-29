@@ -20,12 +20,12 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_K.json', 'r') as fp:
+with open('../job_trace/job_queue_100.json', 'r') as fp:
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
 for item in queue:
-    arrival_time += np.random.poisson(10)
+    arrival_time += np.random.poisson(30)
     queue_dict[item] = arrival_time
 queue_timer = time.time()
 queue_delay = {}
@@ -101,11 +101,11 @@ pc_job = []
 
 K80_node = ['c2178', 'c2182']
 V100_node = ['d1014', 'd1015']
-host_node = 'c0167'
+host_node = 'c0177'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
-INTERVAL = 30 # make decision every 30s 
+INTERVAL = 10 # make decision every 30s 
 
 def K80_LUT(gpu):
     quotient = int(gpu) // 8
@@ -183,7 +183,7 @@ def detect_2_gpus(gpu_dict, gpu_per_node):
     num_nodes = int(len(job_list) / gpu_per_node)
     for i in range(num_nodes):
         start = i * gpu_per_node
-        end = start + gpu_per_node
+        end = i + gpu_per_node
         sliced_list = job_list[start:end]
         occurence = sliced_list.count('idle')
         if occurence >= 2:
@@ -195,27 +195,27 @@ def detect_2_gpus(gpu_dict, gpu_per_node):
 ############### first clear finish status of all jobs ####################
 
 pid_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     pid_dict[job_name] = 0
 
 checkpoint_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     checkpoint_dict[job_name] = 0
 
 ckpt_qual_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     ckpt_qual_dict[job_name] = 0
 
 finish_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     finish_dict[job_name] = 0
 
 epoch_waste_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     epoch_waste_dict[job_name] = 0
 
@@ -325,52 +325,95 @@ while True:
 
     new_finish = []
 
-    for gpu, job in K80_job.items():
+    for gpu, job in V100_job.items():
         if job != 'idle':
-            if finish_dict['job'+job] == 1:
-                K80_used -= 1            
-                K80_job[gpu] = 'idle'
-                print('K80 finished job: ' + job)
+            if V100_batch_time[job] != 0:
+                # checkpoint the job so other jobs can run on its gpu
+                print('V100 finished job: ' + job)
+                if job not in new_finish:
+                    new_finish.append(job)
+
+    # checkpoint new_finish jobs
+    checkpoint_finish_check = []
+    for job in new_finish[:]:
+        if job not in multigpu_list:
+            # need to find its current gpu on V100
+            current_gpu = ''
+            for gpu, job_K in V100_job.items():
+                if job_K == job:
+                    current_gpu = gpu
+                    break
+            real_node, real_gpu = V100_LUT(current_gpu)
+            V100_job[current_gpu] = 'idle'
+            V100_used -= 1
+        else:
+            current_gpu = []
+            for gpu, job_K in V100_job.items():
+                if job_K == job:
+                    current_gpu.append(gpu)
+            real_node, real_gpu = V100_LUT(current_gpu[0])
+            for item in current_gpu:
+                V100_job[item] = 'idle'
+                V100_used -= 1
+        save_job(real_node, job)
+        checkpoint_finish_check.append(job)
+    # wait for all GPUs to be available
+    if len(checkpoint_finish_check) > 0:
+        while True:
+            time.sleep(5)
+            for job in checkpoint_finish_check[:]:
+                if checkpoint_dict['job'+job] == 1: # checkpoint has finished, gpu is free
+                    print(job + ' checkpointed successfully')
+                    checkpoint_dict['job'+job] = 0 # reset it
+                    checkpoint_finish_check.remove(job)
+                # also check if job already finished before sending checkpoint signal
+                elif finish_dict['job'+job] == 1:
+                    print(job + ' finished before receiving checkpoint signal')
+                    checkpoint_finish_check.remove(job)
+            if len(checkpoint_finish_check) == 0:
+                break
+    # give it some time to cleanup old checkpointed jobs
+    time.sleep(5)
 
     ################ submit new jobs to vacant K80 GPUs ############################
-    # first fill in vacant K80s
-    if K80_used < K80_cap:
-        K80_free = K80_cap - K80_used
-        for i in range(K80_free):
+    # first fill in vacant V100s
+    if V100_used < V100_cap:
+        V100_free = V100_cap - V100_used
+        for i in range(V100_free):
             time_passed = int(time.time() - queue_timer)
             if index < len(queue) and queue_dict[queue[index]] < time_passed: # make sure job has arrived in the queue
                 job_new = str(queue[index])
                 if job_new in multigpu_list:
                     # find 2 gpus in the same node to schedule it
-                    idle_gpus = detect_2_gpus(K80_job, K80_per_node)
+                    idle_gpus = detect_2_gpus(V100_job, V100_per_node)
                     if len(idle_gpus) > 0:
                         node_string = ''
                         for gpu in idle_gpus:
-                            real_node, real_gpu = K80_LUT(gpu)
+                            real_node, real_gpu = V100_LUT(gpu)
                             if gpu == idle_gpus[1]:
                                 gpu_str += real_gpu
                                 node_string = real_node
                                 job_start[job_new] = time.time()
                                 queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
-                                K80_start_time[job_new] = time.time()
+                                V100_start_time[job_new] = time.time()
                                 index += 1
                             else:
                                 gpu_str = real_gpu + ','
-                            K80_job[gpu] = job_new
-                            K80_used += 1
+                            V100_job[gpu] = job_new
+                            V100_used += 1
                         start_job(node_string, gpu_str, job_new)
                         time.sleep(5) # don't communicate too often
                 else:
-                    for gpu, job in K80_job.items():
+                    for gpu, job in V100_job.items():
                         if job == 'idle': # schedule new job here if idle
-                            real_node, real_gpu = K80_LUT(gpu)
+                            real_node, real_gpu = V100_LUT(gpu)
                             start_job(real_node, real_gpu, job_new)
-                            K80_job[gpu] = job_new
+                            V100_job[gpu] = job_new
                             job_start[job_new] = time.time()
                             queue_delay[job_new] = int(time_passed - queue_dict[queue[index]])
-                            K80_start_time[job_new] = time.time()
+                            V100_start_time[job_new] = time.time()
                             index += 1
-                            K80_used += 1
+                            V100_used += 1
                             time.sleep(5) # don't communicate too often
                             break
 
@@ -394,6 +437,8 @@ while True:
     if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
         print('all jobs are finished!')
         break
+    if index == len(queue):
+        print(V100_job)
 
 # get average JCT
 average_JCT = np.average(list(JCT.values()))

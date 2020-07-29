@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_50.json', 'r') as fp: #TODO
+with open('../job_trace/job_queue_100.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -33,7 +33,7 @@ queue_delay = {}
 for item in queue:
     queue_delay[str(item)] = 0
 
-multigpu_list = ['1', '2', '3']#, '4', '5', '6', '7']
+multigpu_list = ['1', '2', '3', '4', '5', '6', '7'] #TODO
 
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
@@ -139,8 +139,8 @@ for item in queue:
 
 index = 0
 
-K80_cap = 8
-V100_cap = 4
+K80_cap = 16 #TODO
+V100_cap = 8
 K80_used = 0
 V100_used = 0
 K80_per_node = 8
@@ -156,9 +156,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2177']#, 'c2182']
-V100_node = ['c2189']#, 'd1015']
-host_node = 'c0156'
+K80_node = ['c2178', 'c2182']
+V100_node = ['d1014', 'd1015']
+host_node = 'c0167'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -172,7 +172,7 @@ def detect_2_gpus(gpu_dict, gpu_per_node, status='idle'):
     num_nodes = int(len(job_list) / gpu_per_node)
     for i in range(num_nodes):
         start = i * gpu_per_node
-        end = i + gpu_per_node
+        end = start + gpu_per_node
         sliced_list = job_list[start:end]
         occurence = sliced_list.count(status)
         if occurence >= 2:
@@ -325,25 +325,25 @@ def locality_check(K80_avail, V100_avail, promoted, demoted):
     demoted_1gpu = [i for i in demoted if i not in multigpu_list] # 1gpu job
     demoted_2gpu = [i for i in demoted if i in multigpu_list] # 2gpu job
 
-    if len(K80_avail) >= len(demoted) and 2*len(K80_2gpu) >= len(demoted_2gpu):
-        if len(V100_avail) >= len(promoted) and 2*len(V100_2gpu) >= len(promoted_2gpu):
-            return None
-        else:
-            print('Notice: promoted/demoted jobs cannot fit in their destination due to locality', file=run_log, flush=True)
-            print('Remove all 2-gpu jobs from this migration decision', file=run_log, flush=True) # meaning they stay wherever they were before
-            for job in promoted_2gpu:
-                promoted.remove(job)
-            for job in demoted_2gpu:
-                demoted.remove(job)
-            for gpu_pair in K80_2gpu:
-                for gpu in gpu_pair:
-                    K80_avail.remove(gpu)
-            for gpu_pair in V100_2gpu:
-                for gpu in gpu_pair:
-                    V100_avail.remove(gpu)
-            return K80_avail, V100_avail, promoted, demoted
+    condition1 = len(K80_avail) >= len(demoted) and 2*len(K80_2gpu) >= len(demoted_2gpu)
+    condition2 = len(V100_avail) >= len(promoted) and 2*len(V100_2gpu) >= len(promoted_2gpu)
+
+    if condition1 and condition2:
+        return None
     else:
-        raise ValueError('Bug with locality check, should not happen')
+        print('Notice: promoted/demoted jobs cannot fit in their destination due to locality', file=run_log, flush=True)
+        print('Remove all 2-gpu jobs from this migration decision', file=run_log, flush=True) # meaning they stay wherever they were before
+        for job in promoted_2gpu:
+            promoted.remove(job)
+        for job in demoted_2gpu:
+            demoted.remove(job)
+        for gpu_pair in K80_2gpu:
+            for gpu in gpu_pair:
+                K80_avail.remove(gpu)
+        for gpu_pair in V100_2gpu:
+            for gpu in gpu_pair:
+                V100_avail.remove(gpu)
+        return K80_avail, V100_avail, promoted, demoted
 
 #locality_check(['2'],['2'],['44'],['48'])
 
@@ -958,7 +958,6 @@ while True:
     if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
         print('all jobs are finished!', file=run_log, flush=True)
         break
-
 
 # get average JCT
 average_JCT = np.average(list(JCT.values()))
