@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_100.json', 'r') as fp: #TODO
+with open('../job_trace/job_queue_50.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -33,7 +33,23 @@ queue_delay = {}
 for item in queue:
     queue_delay[str(item)] = 0
 
-multigpu_list = ['1', '2', '3', '4', '5', '6', '7'] #TODO
+# predict batch time simulated
+with open('K80_batch_time.json', 'r') as fp:
+    K80_batch_pred = json.load(fp)
+with open('V100_batch_time.json', 'r') as fp:
+    V100_batch_pred = json.load(fp)
+for key,value in K80_batch_pred.items():
+    # add Gaussian noise with 5% mean
+    pred_error = value * 0.035 # 3% error
+    direction = 1 if random.random() < 0.5 else -1
+    K80_batch_pred[key] = round(value + direction*pred_error,3)
+for key,value in V100_batch_pred.items():
+    # add Gaussian noise with 5% mean
+    pred_error = value * 0.023 # 3% error
+    direction = 1 if random.random() < 0.5 else -1
+    V100_batch_pred[key] = round(value + direction*pred_error,3)
+
+multigpu_list = ['1', '2', '3']#, '4', '5', '6', '7'] #TODO
 
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
@@ -139,8 +155,8 @@ for item in queue:
 
 index = 0
 
-K80_cap = 16 #TODO
-V100_cap = 8
+K80_cap = 8 #TODO
+V100_cap = 4
 K80_used = 0
 V100_used = 0
 K80_per_node = 8
@@ -156,9 +172,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2178', 'c2182']
-V100_node = ['d1014', 'd1015']
-host_node = 'c0167'
+K80_node = ['c2177']#, 'c2182']
+V100_node = ['c2189']#, 'd1015']
+host_node = 'c0169'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -381,13 +397,16 @@ def get_remaining_time(job_list):
         # use prediction for remaining time on non-birth GPU
         # also use a general migration overhead
         elif job in step1_job and job not in step2_job:
+            mig_overhead = 100
             K80_remain = job_remaining_batch[job] * K80_batch_time[job]
             V100_remain = job_remaining_batch[job] * V100_batch_time[job]
+            K80_pred = job_remaining_batch[job] * K80_batch_pred[job]
+            V100_pred = job_remaining_batch[job] * V100_batch_pred[job]
             # this is not accurate, but just to force job to run on the other GPU type not profiled
             if birthplace[job] in K80_node:
-                result_dict[job] = [2 * K80_remain, 0]
+                result_dict[job] = [K80_remain, V100_pred + mig_overhead]
             elif birthplace[job] in V100_node:
-                result_dict[job] = [0, 2 * V100_remain]
+                result_dict[job] = [K80_pred + mig_overhead, V100_remain]
         else: # job has its K80_batch_time and V100_batch_time profiled
             K80_remain = job_remaining_batch[job] * K80_batch_time[job]
             V100_remain = job_remaining_batch[job] * V100_batch_time[job]

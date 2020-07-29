@@ -1,3 +1,3 @@
-starting up on c0167 port 10002
-connecting to d1014 port 10000
-sending b'start 4 gpu 0,1'
+starting up on c0169 port 10002
+connecting to c2189 port 10000
+sending b'start 1 gpu 0,1'
