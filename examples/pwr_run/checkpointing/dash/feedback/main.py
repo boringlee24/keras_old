@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_100.json', 'r') as fp: #TODO
+with open('../job_trace/job_queue_sc.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -33,7 +33,7 @@ queue_delay = {}
 for item in queue:
     queue_delay[str(item)] = 0
 
-multigpu_list = ['1', '2', '3', '4', '5', '6', '7'] #TODO
+multigpu_list = []#'1', '2', '3']#, '4', '5', '6', '7'] #TODO
 
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
@@ -158,7 +158,7 @@ pc_job = []
 
 K80_node = ['c2178', 'c2182']
 V100_node = ['d1014', 'd1015']
-host_node = 'c0167'
+host_node = 'c0153'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -910,6 +910,7 @@ while True:
                     real_node, real_gpu = V100_LUT(gpu)                           
                     resume_job(real_node, real_gpu, job)
                     V100_job[gpu] = job
+                    V100_used += 1
                 else:
                     gpu_split = gpu.split(',')
                     node_string = ''
@@ -921,10 +922,10 @@ while True:
                         else:
                             gpu_str = real_gpu + ','
                         V100_job[g] = job
+                        V100_used += 1
                     resume_job(node_string, gpu_str, job)
                 promoted.remove(job)
                 num_mig[job] += 1
-                V100_used += 1
             else: # job finished before checkpointing
                 print('job'+job_new+' has finished before checkpointing', file=run_log, flush=True)
                 promoted.remove(job)
@@ -937,6 +938,7 @@ while True:
                     real_node, real_gpu = K80_LUT(gpu)                           
                     resume_job(real_node, real_gpu, job)
                     K80_job[gpu] = job
+                    K80_used += 1
                 else:
                     gpu_split = gpu.split(',')
                     node_string = ''
@@ -948,10 +950,10 @@ while True:
                         else:
                             gpu_str = real_gpu + ','
                         K80_job[g] = job
+                        K80_used += 1
                     resume_job(node_string, gpu_str, job)
                 demoted.remove(job)
                 num_mig[job] += 1
-                K80_used += 1
             else: # job finished before checkpointing
                 print('job'+job_new+' has finished before checkpointing', file=run_log, flush=True)
                 demoted.remove(job)

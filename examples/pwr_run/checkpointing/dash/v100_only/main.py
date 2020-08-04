@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_V.json', 'r') as fp:
+with open('../job_trace/job_queue_100.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -32,7 +32,7 @@ queue_delay = {}
 for item in queue:
     queue_delay[str(item)] = 0
 
-multigpu_list = ['1', '2', '3', '4', '5', '6', '7']
+multigpu_list = ['1', '2', '3', '4', '5', '6', '7'] #TODO
 
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
@@ -83,8 +83,8 @@ for item in queue:
 
 index = 0
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 16 #TODO
+V100_cap = 12
 K80_used = 0
 V100_used = 0
 K80_per_node = 8
@@ -100,8 +100,8 @@ qualified_job = []
 pc_job = []
 
 K80_node = ['c2178', 'c2182']
-V100_node = ['d1014', 'd1015']
-host_node = 'c0180'
+V100_node = ['d1006', 'd1014', 'd1015']
+host_node = 'c0147'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -195,27 +195,27 @@ def detect_2_gpus(gpu_dict, gpu_per_node):
 ############### first clear finish status of all jobs ####################
 
 pid_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     pid_dict[job_name] = 0
 
 checkpoint_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     checkpoint_dict[job_name] = 0
 
 ckpt_qual_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     ckpt_qual_dict[job_name] = 0
 
 finish_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     finish_dict[job_name] = 0
 
 epoch_waste_dict = {}
-for i in range(100):
+for i in range(len(queue)):
     job_name = 'job' + str(i + 1)
     epoch_waste_dict[job_name] = 0
 

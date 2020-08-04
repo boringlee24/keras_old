@@ -15,7 +15,7 @@ import _thread
 import signal
 from datetime import datetime
 import csv
-import dash_opt
+import opt_dash
 
 parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
@@ -34,9 +34,9 @@ for item in queue:
     queue_delay[str(item)] = 0
 
 # predict batch time simulated
-with open('K80_batch_time.json', 'r') as fp:
+with open('K80_batch_time_50.json', 'r') as fp: #TODO
     K80_batch_pred = json.load(fp)
-with open('V100_batch_time.json', 'r') as fp:
+with open('V100_batch_time_50.json', 'r') as fp:
     V100_batch_pred = json.load(fp)
 for key,value in K80_batch_pred.items():
     # add Gaussian noise with 5% mean
@@ -172,9 +172,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2177']#, 'c2182']
-V100_node = ['c2189']#, 'd1015']
-host_node = 'c0169'
+K80_node = ['c2178']#, 'c2182']
+V100_node = ['d1014']#, 'd1015']
+host_node = 'c0145'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -793,7 +793,7 @@ while True:
 
     # perform 1st optimization
     if len(job_num_GPUs) > 0 and len(job_remaining_time) > 0:
-        opt_decision = dash_opt.optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
+        opt_decision = opt_dash.optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
         print('job_pool:',job_pool,'K80_pool:',K80_pool,'V100_pool:',V100_pool,'remain_time',job_remaining_time,'decision:',opt_decision, file=run_log, flush=True)
 
         # check if placement of promo/demo 2-gpu jobs are viable
@@ -931,6 +931,7 @@ while True:
                     real_node, real_gpu = V100_LUT(gpu)                           
                     resume_job(real_node, real_gpu, job)
                     V100_job[gpu] = job
+                    V100_used += 1
                 else:
                     gpu_split = gpu.split(',')
                     node_string = ''
@@ -942,10 +943,10 @@ while True:
                         else:
                             gpu_str = real_gpu + ','
                         V100_job[g] = job
+                        V100_used += 1
                     resume_job(node_string, gpu_str, job)
                 promoted.remove(job)
                 num_mig[job] += 1
-                V100_used += 1
             else: # job finished before checkpointing
                 print('job'+job_new+' has finished before checkpointing', file=run_log, flush=True)
                 promoted.remove(job)
@@ -958,6 +959,7 @@ while True:
                     real_node, real_gpu = K80_LUT(gpu)                           
                     resume_job(real_node, real_gpu, job)
                     K80_job[gpu] = job
+                    K80_used += 1
                 else:
                     gpu_split = gpu.split(',')
                     node_string = ''
@@ -969,10 +971,10 @@ while True:
                         else:
                             gpu_str = real_gpu + ','
                         K80_job[g] = job
+                        K80_used += 1
                     resume_job(node_string, gpu_str, job)
                 demoted.remove(job)
                 num_mig[job] += 1
-                K80_used += 1
             else: # job finished before checkpointing
                 print('job'+job_new+' has finished before checkpointing', file=run_log, flush=True)
                 demoted.remove(job)
