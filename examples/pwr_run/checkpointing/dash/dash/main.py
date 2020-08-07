@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('../job_trace/job_queue_50.json', 'r') as fp: #TODO
+with open('../job_trace/job_queue_sc_50.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -34,9 +34,9 @@ for item in queue:
     queue_delay[str(item)] = 0
 
 # predict batch time simulated
-with open('K80_batch_time_50.json', 'r') as fp: #TODO
+with open('batch_times/K80_batch_time_sc.json', 'r') as fp: #TODO
     K80_batch_pred = json.load(fp)
-with open('V100_batch_time_50.json', 'r') as fp:
+with open('batch_times/V100_batch_time_sc.json', 'r') as fp:
     V100_batch_pred = json.load(fp)
 for key,value in K80_batch_pred.items():
     # add Gaussian noise with 5% mean
@@ -49,7 +49,7 @@ for key,value in V100_batch_pred.items():
     direction = 1 if random.random() < 0.5 else -1
     V100_batch_pred[key] = round(value + direction*pred_error,3)
 
-multigpu_list = ['1', '2', '3']#, '4', '5', '6', '7'] #TODO
+multigpu_list = []#['1', '2', '3']#, '4', '5', '6', '7'] #TODO
 
 job_start = {} #{'49': time1, '15': time2...}
 JCT = {}
@@ -173,7 +173,7 @@ step2_job = []
 pc_job = []
 
 K80_node = ['c2178']#, 'c2182']
-V100_node = ['d1014']#, 'd1015']
+V100_node = ['d1003']#, 'd1015']
 host_node = 'c0145'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
@@ -397,7 +397,7 @@ def get_remaining_time(job_list):
         # use prediction for remaining time on non-birth GPU
         # also use a general migration overhead
         elif job in step1_job and job not in step2_job:
-            mig_overhead = 100
+            mig_overhead = 40
             K80_remain = job_remaining_batch[job] * K80_batch_time[job]
             V100_remain = job_remaining_batch[job] * V100_batch_time[job]
             K80_pred = job_remaining_batch[job] * K80_batch_pred[job]

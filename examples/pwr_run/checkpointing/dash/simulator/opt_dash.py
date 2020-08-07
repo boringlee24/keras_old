@@ -22,7 +22,7 @@ def optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time):
 
     x = cp.Variable(num_variables, boolean=True)
 
-    objective = cp.Minimize(remaining_times*x)
+    objective = cp.Maximize(remaining_times*x) #TODO
 
     constraints = []
     for j in range(num_jobs):
