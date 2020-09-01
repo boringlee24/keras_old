@@ -42,6 +42,8 @@ for i in range(50):
     v100_time.append((wall_time[-1] - wall_time[0]) / (len(wall_time) - 1))
     v100_dict[jobb] = round((wall_time[-1] - wall_time[0]) / (len(wall_time) - 1), 1)
 
+pdb.set_trace()
+
 with open('k80_time.json', 'w') as f:
     json.dump(k80_dict, f, indent=4)
 with open('v100_time.json', 'w') as f:

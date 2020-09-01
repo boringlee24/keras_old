@@ -58,6 +58,26 @@ for tc in dirs:
     else:
         all_util[model] = {gpu: util}
 
+log_dir = '/scratch/li.baol/GPU_pwr_meas/tensorflow/round1/regression/mem_util/*'
+dirs = glob.glob(log_dir)
+dirs.sort()
+# store everything in a dict
+all_mem_util = {} # {densenet121_32:{K80:a, K100:b}...}
+
+for tc in dirs:
+    test = tc.split('/')[6+1+1].split('.')[0]
+    gpu = test.split('_')[0]
+    model = test.replace(gpu + '_', '')
+
+    # read tc.csv into a list
+    data = pandas.read_csv(tc)
+    mem_util = np.asarray(data[data.columns[0]].tolist())
+    
+    if model in all_mem_util:
+        all_mem_util[model][gpu] = mem_util
+    else:
+        all_mem_util[model] = {gpu: mem_util}
+
 log_dir = '/scratch/li.baol/GPU_time_meas/tensorflow/round1/csv/*'
 dirs = glob.glob(log_dir)
 dirs.sort()
@@ -83,28 +103,32 @@ for tc in dirs:
 x1_data = [] # power
 x2_data = [] # speed
 x3_data = [] # utilization
+x4_data = [] # mem util
 y_data = []
 
 for key in all_pwr:
 #    if ('mnasnet' not in key and 'mobilenet' not in key):
-    for i in all_pwr[key]['V100'].tolist(): # power
+    for i in all_pwr[key]['K80'].tolist(): # power
         x1_data.append(i)
-    for i in (1 / all_time[key]['V100']).tolist(): # speed
-    #for i in (all_time[key]['V100']).tolist():
+    for i in (1 / all_time[key]['K80']).tolist(): # speed
+    #for i in (all_time[key]['K80']).tolist():
         x2_data.append(i)
-    for i in (all_util[key]['V100']).tolist(): # utilization
+    for i in (all_util[key]['K80']).tolist(): # utilization
         x3_data.append(i)
+    for i in (all_mem_util[key]['K80']).tolist(): # utilization
+        x4_data.append(i)
     for i in ((all_time[key]['K80'] - all_time[key]['V100']) / all_time[key]['K80'] * 100).tolist(): # speed up  
         y_data.append(i)
 
 x1_norm = [(i - min(x1_data)) / (max(x1_data) - min(x1_data)) for i in x1_data]
 x2_norm = [(i - min(x2_data)) / (max(x2_data) - min(x2_data)) for i in x2_data]
 x3_norm = [(i - min(x3_data)) / (max(x3_data) - min(x3_data)) for i in x3_data]
+x4_norm = [(i - min(x4_data)) / (max(x4_data) - min(x4_data)) for i in x4_data]
 
 # create training data
 x_data = []
 for i in range(len(x1_norm)):
-    x_data.append([x1_norm[i], x2_norm[i], x3_norm[i]])
+    x_data.append([x1_norm[i], x2_norm[i], x3_norm[i], x4_norm[i]])
 #    x_data.append([x1_data[i], x3_data[i]])
 
 kf = KFold(n_splits=5, shuffle=True)

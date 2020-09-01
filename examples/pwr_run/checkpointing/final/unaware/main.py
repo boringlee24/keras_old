@@ -79,8 +79,8 @@ with open('speedup.json', 'r') as fp:
 
 index = 0
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 8
+V100_cap = 4
 K80_used = 0
 V100_used = 0
 
@@ -93,9 +93,9 @@ for i in range(V100_cap):
 qualified_job = []
 pc_job = []
 
-K80_node = ['c2180', 'c2179']
-V100_node = ['d1009', 'd1002']
-host_node = 'c0193'
+K80_node = ['c2183']
+V100_node = ['d1018']
+host_node = 'c0179'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -117,14 +117,6 @@ def V100_LUT(gpu):
 def send_signal(node, cmd):
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if node == K80_node[0]:
-        port = 10000
-    elif node == K80_node[1]:
-        port = 10001
-    elif node == V100_node[0]:
-        port = 10002
-    elif node == V100_node[1]:
-        port = 10003
     port = 10000
     # Connect the socket to the port where the server is listening
     server_address = (node, int(port))

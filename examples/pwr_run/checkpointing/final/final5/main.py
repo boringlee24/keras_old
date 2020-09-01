@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('job_queue.json', 'r') as fp:
+with open('job_queue_50.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -131,7 +131,7 @@ for item in queue:
 index = 0
 all_jobs_started = False
 
-K80_cap = 12
+K80_cap = 8 #TODO
 V100_cap = 4
 K80_used = 0
 V100_used = 0
@@ -147,13 +147,14 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2180', 'c2181']
-V100_node = ['d1021', 'd1012']
-host_node = 'c0189'
+K80_node = ['c2178']#, 'c2181']
+V100_node = ['d1022']#, 'd1012']
+host_node = 'c0158'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
 INTERVAL = 30 # make decision every 30s
+run_log = open('run.log','w')
 
 def K80_LUT(gpu):
     quotient = int(gpu) // 8
@@ -214,14 +215,14 @@ def send_signal(node, cmd):
     # Connect the socket to the port where the server is listening
     server_address = (node, int(port))
 
-    print('connecting to {} port {}'.format(*server_address))
+    print('connecting to {} port {}'.format(*server_address), file=run_log, flush=True)
     sock.connect(server_address)
 
     try:
         # Send data
         message = cmd.encode('utf-8') #b'save 35'  #b'start 35 gpu 6'#b'save 35'
  
-        print('sending {!r}'.format(message))
+        print('sending {!r}'.format(message), file=run_log, flush=True)
         sock.sendall(message)
         while True:
             data = sock.recv(32)
@@ -229,7 +230,7 @@ def send_signal(node, cmd):
 #                print('received {!r}'.format(data))
                 break
             else:
-                print('waiting for success signal')
+                print('waiting for success signal', file=run_log, flush=True)
                 time.sleep(1)
     finally:
         #print('closing socket')
@@ -342,7 +343,7 @@ def check_step1_complete(job_list, node):
                         elif node in K80_node:
                             K80_epoch_time[job] = wall_time[1] - wall_time[0]                           
                         step1_job.append(job)
-                        print('job' + job + ' has reached step1 complete')
+                        print('job' + job + ' has reached step1 complete', file=run_log, flush=True)
                 except Exception:
                     pass
 
@@ -377,7 +378,7 @@ def check_step2_complete(job_list, node):
                         speedup = (K80_time_step2 - V100_time_step2) / K80_time_step2
                         speedup_dict[job] = speedup
                         step2_job.append(job)
-                        print('job' + job + ' has reached step2 complete')
+                        print('job' + job + ' has reached step2 complete', file=run_log, flush=True)
                 except Exception:
                     pass
 
@@ -419,7 +420,7 @@ def thread_function():
     # here listen on the socket 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = (host_node, 10002)
-    print('starting up on {} port {}'.format(*server_address))
+    print('starting up on {} port {}'.format(*server_address), file=run_log, flush=True)
     sock.bind(server_address)
     sock.listen(5)  
     while True:
@@ -533,14 +534,14 @@ while True:
             if finish_dict['job'+job] == 1:
                 K80_used -= 1            
                 K80_job[gpu] = 'idle'
-                print('K80 finished job: ' + job)
+                print('K80 finished job: ' + job, file=run_log, flush=True)
 
     for gpu, job in V100_job.items():
         if job != 'idle':
             if finish_dict['job'+job] == 1:
                 V100_used -= 1            
                 V100_job[gpu] = 'idle'
-                print('V100 finished job: ' + job)
+                print('V100 finished job: ' + job, file=run_log, flush=True)
                 if job in demote_list:
                     demote_list.remove(job)
 
@@ -555,7 +556,7 @@ while True:
                 real_node, real_gpu = V100_LUT(gpu)
                 kill_job(real_node, job)
                 qualified_job.append(job)
-                print('job ' + job + ' has been qualified for demotion to K80')
+                print('job ' + job + ' has been qualified for demotion to K80', file=run_log, flush=True)
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / V100_epoch_time[job] # num of epochs per hr
@@ -577,7 +578,7 @@ while True:
                 real_node, real_gpu = K80_LUT(gpu)
                 kill_job(real_node, job)
                 qualified_job.append(job)
-                print('job ' + job + ' has been qualified for promotion to V100')
+                print('job ' + job + ' has been qualified for promotion to V100', file=run_log, flush=True)
                 time.sleep(3) # wait for run.sh to finish
                 x1, x3 = gpu_pwr.process_csv('job'+job, testcase)
                 x2 = 3600 / K80_epoch_time[job]
@@ -661,19 +662,19 @@ while True:
                 if int(time.time() - promote_start_time[job]) > max(demote_qualify_time, max(v100_1st[job])):
                     demote_list.append(job)
                     print('job' + job + 'qualified for demote for passing demote qualify time ' +
-                    str(int(demote_qualify_time)))
+                    str(int(demote_qualify_time)), file=run_log, flush=True)
             # for jobs who have not finished profiling, add the job if it's qualified and it started on V100
             elif job not in demote_list and job not in step2_job and job in qualified_job and birthplace[job] in V100_node:
                 demote_list.append(job)
-                print('job' + job + 'qualified for demote for profiling')
+                print('job' + job + 'qualified for demote for profiling', file=run_log, flush=True)
 
     if len(promote_list) > 0 or len(demote_list) > 0:
         promoted, demoted = max_speedup_promotion(K80_free, V100_free, V100_job, promote_list, demote_list, force_demote)
 
         if len(promoted) > 0:
-            print('promoted jobs: ', promoted)
+            print('promoted jobs: ', promoted, file=run_log, flush=True)
         if len(demoted) > 0:
-            print('demoted jobs: ', demoted)
+            print('demoted jobs: ', demoted, file=run_log, flush=True)
         # stop all promoted jobs on K80
         checkpoint_finish_check = []
         for gpu, job in K80_job.items():
@@ -710,12 +711,12 @@ while True:
                 time.sleep(5)
                 for job in checkpoint_finish_check[:]:
                     if checkpoint_dict['job'+job] == 1: # checkpoint has finished, gpu is free
-                        print(job + ' checkpointed successfully')
+                        print(job + ' checkpointed successfully', file=run_log, flush=True)
                         checkpoint_dict['job'+job] = 0 # reset it
                         checkpoint_finish_check.remove(job)
                     # also check if job already finished before sending checkpoint signal
                     elif finish_dict['job'+job] == 1:
-                        print(job + ' finished before receiving checkpoint signal')
+                        print(job + ' finished before receiving checkpoint signal', file=run_log, flush=True)
                         checkpoint_finish_check.remove(job)
                 if len(checkpoint_finish_check) == 0:
                     break
@@ -750,7 +751,7 @@ while True:
                         K80_used += 1
                         break
             else: # job has already finished before checkpointing
-                print('job'+job_new+' has finished before checkpointing')
+                print('job'+job_new+' has finished before checkpointing', file=run_log, flush=True)
                 demoted.remove(job_new)
 
         # perform a check, make sure all promoted/demoted jobs are scheduled
@@ -775,7 +776,7 @@ while True:
     K80_idle_num = sum(value == 'idle' for value in K80_job.values())
     V100_idle_num = sum(value == 'idle' for value in V100_job.values())
     if K80_idle_num == K80_cap and V100_idle_num == V100_cap and index == len(queue):
-        print('all jobs are finished!')
+        print('all jobs are finished!', file=run_log, flush=True)
         break
 
 
@@ -791,7 +792,7 @@ queue_delay['average'] = average_queue_delay
 
 # after everything is finished
 
-print('finished all runs')
+print('finished all runs', file=run_log, flush=True)
 JCT_name = testcase + '_JCT.json'
 overhead_name = testcase + '_overhead.json'
 num_mig_name = testcase + '_num_mig.json'

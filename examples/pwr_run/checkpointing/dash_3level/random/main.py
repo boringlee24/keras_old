@@ -137,7 +137,7 @@ def detect_2_gpus(gpu_dict, gpu_per_node, status='idle'):
     num_nodes = int(len(job_list) / gpu_per_node)
     for i in range(num_nodes):
         start = i * gpu_per_node
-        end = i + gpu_per_node
+        end = start + gpu_per_node
         sliced_list = job_list[start:end]
         occurence = sliced_list.count(status)
         if occurence >= 2:

@@ -118,14 +118,14 @@ for item in queue:
 
 index = 0
 
-K80_cap = 8 #TODO
-V100_cap = 4
+K80_cap = 4 #TODO
+V100_cap = 8
 K80_used = 0
 V100_used = 0
 K80_per_node = 8
 V100_per_node = 4
 K80_node = ['K1']#, 'c2182']
-V100_node = ['V1']#, 'd1015']
+V100_node = ['V1', 'V2']#, 'd1015']
 
 K80_job = {}
 for i in range(K80_cap):
@@ -393,7 +393,16 @@ while True:
 
     # perform 1st optimization
     if len(job_num_GPUs) > 0 and len(job_remaining_time) > 0:
-        opt_decision = opt_dash.optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
+        if 'optimize' in testcase:
+            opt_decision = opt_dash.optimize_promotion(num_GPUs, job_num_GPUs, job_remaining_time)
+        elif 'max_speedup' in testcase:
+            opt_decision = opt_dash.max_speedup_first(num_GPUs, job_num_GPUs, job_remaining_time)
+        elif 'shortest_job' in testcase:
+            opt_decision = opt_dash.shortest_jobs_first(num_GPUs, job_num_GPUs, job_remaining_time)
+        else:
+            print('testcase does not exist')
+            sys.exit()
+
         print('job_pool:',job_pool,'K80_pool:',K80_pool,'V100_pool:',V100_pool,'remain_time',job_remaining_time,'decision:',opt_decision, file=run_log, flush=True)
 
         # check if placement of promo/demo 2-gpu jobs are viable

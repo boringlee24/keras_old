@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='TCP client')
 parser.add_argument('--tc', metavar='TESTCASE', type=str, help='select testcase')
 args = parser.parse_args()
 
-with open('job_queue.json', 'r') as fp:
+with open('job_queue_50.json', 'r') as fp: #TODO
     queue = json.load(fp)
 queue_dict = {}
 arrival_time = 0 
@@ -127,8 +127,8 @@ for item in queue:
 index = 0
 all_jobs_started = False
 
-K80_cap = 16
-V100_cap = 8
+K80_cap = 8 #TODO
+V100_cap = 4
 K80_used = 0
 V100_used = 0
 
@@ -143,9 +143,9 @@ step1_job = []
 step2_job = []
 pc_job = []
 
-K80_node = ['c2180', 'c2181']
-V100_node = ['d1018', 'd1012']
-host_node = 'c0185'
+K80_node = ['c2178']#, 'c2181']
+V100_node = ['d1022']#, 'd1012']
+host_node = 'c0200'
 testcase = args.tc
 ### also, change .h5 file folder in jobs ###
 
@@ -689,6 +689,8 @@ while True:
                 if len(checkpoint_finish_check) == 0:
                     break
 
+        # give it some time to cleanup old checkpointed jobs
+        time.sleep(3)
         # resume promoted jobs on V100, make sure the gpu is idle
         for job_new in promoted[:]:
             if finish_dict['job'+job_new] != 1:
