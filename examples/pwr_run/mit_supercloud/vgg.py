@@ -39,7 +39,7 @@ args = parser.parse_args()
 
 # Training parameters
 batch_size = args.batch_size  # orig paper trained all networks with batch_size=128
-epochs = 50
+epochs = 10 #TODO
 data_augmentation = True
 num_classes = 10
 
